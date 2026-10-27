@@ -29,7 +29,7 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Head><title>Theosis · Orthodox daily companion</title></Head>
+        <Head><title>Crkvica · Orthodox daily companion</title></Head>
         <StatusBar style="light" />
         <Routes />
       </AuthProvider>

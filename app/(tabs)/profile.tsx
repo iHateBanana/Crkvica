@@ -35,7 +35,7 @@ function CreateProfile() {
     <>
       <Label>{t('Create your profile')}</Label>
       <Card tone="red">
-        <Body>{t('You are using Theosis as a guest. Create a profile to keep your prayer rule, journal and check-ins safe and use them on any device.')}</Body>
+        <Body>{t('You are using Crkvica as a guest. Create a profile to keep your prayer rule, journal and check-ins safe and use them on any device.')}</Body>
         <Input placeholder={t('Name')} value={name} onChangeText={setName} />
         <Chips
           options={[{ value: 'male', label: t('Male') }, { value: 'female', label: t('Female') }, { value: 'unspecified', label: t('Prefer not to say') }]}

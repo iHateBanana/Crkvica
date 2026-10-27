@@ -23,7 +23,7 @@ export default function Privacy() {
       <Stack.Screen options={{ headerShown: false }} />
       <Screen>
         {session && <Button variant="ghost" label={t('Return to Profile')} onPress={() => router.replace('/(tabs)/profile')} />}
-        <PageHeader title={t('Privacy Policy')} subtitle="Theosis" />
+        <PageHeader title={t('Privacy Policy')} subtitle="Crkvica" />
         <Body muted small>{t('Last updated: October 2026')}</Body>
         {SECTIONS.map(([h, b]) => (
           <Card key={h} compactTop>

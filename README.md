@@ -1,4 +1,4 @@
-# Theosis
+# Crkvica
 
 An Orthodox daily companion: calendar with red-letter feasts and fasting, saints and readings, prayer rule with streaks, journal, a personal daily check-in, a family and cycle tracker, and Serbian slava / name days. Available in English, Српски and Srpski.
 
@@ -74,7 +74,7 @@ Any static host works if it serves `index.html` for unknown paths. `EXPO_PUBLIC_
 
 ## Install as an app (PWA, free)
 
-The web build is installable: `public/manifest.webmanifest`, the icons in `public/` and `public/index.html` make it open full screen with the Theosis icon. After deploying over HTTPS, open the site on a phone and choose **Share, Add to Home Screen** (iPhone, in Safari) or **menu, Install app** (Android, in Chrome).
+The web build is installable: `public/manifest.webmanifest`, the icons in `public/` and `public/index.html` make it open full screen with the Crkvica icon. After deploying over HTTPS, open the site on a phone and choose **Share, Add to Home Screen** (iPhone, in Safari) or **menu, Install app** (Android, in Chrome).
 
 ## Deploy the mobile apps (EAS)
 

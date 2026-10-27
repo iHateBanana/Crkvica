@@ -41,7 +41,7 @@ export default function Login() {
     <Screen>
       <View style={{ alignItems: 'center', gap: 8, marginTop: 40, marginBottom: 16 }}>
         <Orb color={colors.gold} size={96}><Cross size={56} color={colors.gold} /></Orb>
-        <Title size={36}>Theosis</Title>
+        <Title size={36}>Crkvica</Title>
         <Ornament style={{ width: 220, alignSelf: 'center' }} />
         <Text style={{ color: colors.muted, textAlign: 'center', lineHeight: 22 }}        >{t('Your daily Orthodox companion: feasts, fasts, prayer and reflection.')}</Text>
       </View>

@@ -248,7 +248,7 @@ export const SR: Record<string, string> = {
   'Guest': 'Гост',
   'Create your profile': 'Направите свој профил',
   'Create profile': 'Направи профил',
-  'You are using Theosis as a guest. Create a profile to keep your prayer rule, journal and check-ins safe and use them on any device.': 'Користите Теозис као гост. Направите профил да сачувате молитвено правило, дневник и пријаве и да их користите на било ком уређају.',
+  'You are using Crkvica as a guest. Create a profile to keep your prayer rule, journal and check-ins safe and use them on any device.': 'Користите Црквицу као гост. Направите профил да сачувате молитвено правило, дневник и пријаве и да их користите на било ком уређају.',
   'Enter an email and a password of at least 6 characters.': 'Унесите е-пошту и лозинку од најмање 6 карактера.',
   'Profile created. Everything you saved as a guest is kept.': 'Профил је направљен. Све што сте сачували као гост је задржано.',
   'Signing out as a guest will lose your saved data. Create a profile first.': 'Одјава као гост брише сачуване податке. Прво направите профил.',
