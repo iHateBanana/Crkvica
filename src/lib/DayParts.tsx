@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 import { OrthoDay, OrthoReading } from './orthocal';
-import { daysUntilSlava, Slava, SLAVAS, slavaOn } from './slava';
+import { celebratesName, daysUntilSlava, slavaById, slavaLabel, slavaOn } from './slava';
 import { toLatin, useT } from './i18n';
 import { Body, Card, colors, Cross, Label, serif } from './ui';
 
@@ -91,30 +91,28 @@ export function SaintsList({ saints }: { saints: string[] }) {
   );
 }
 
-export function slavaName(s: Slava, lang: 'en' | 'sr' | 'sr-Latn') {
-  return lang === 'en' ? s.en : lang === 'sr' ? s.sr : toLatin(s.sr);
-}
-
-export function SlavaCard({ date, mySlava }: { date: Date; mySlava?: string | null }) {
+export function SlavaCard({ date, mySlava, name }: { date: Date; mySlava?: string | null; name?: string | null }) {
   const { t, lang } = useT();
   const today = slavaOn(date);
-  const mine = SLAVAS.find((s) => s.id === mySlava);
+  const mine = slavaById(mySlava);
   const left = mine ? daysUntilSlava(mine, date) : null;
   if (!today && !mine) return null;
   const names = today ? (lang === 'sr-Latn' ? today.names.map(toLatin) : today.names) : [];
+  const myNameDay = today && name && celebratesName(today, name);
   return (
     <>
       <Label>{t('Slava & name days')}</Label>
       <Card tone="gold">
         {today ? (
           <>
-            <Text style={{ color: colors.gold, fontFamily: serif, fontSize: 19 }}>{t('Today is a slava: {name}', { name: slavaName(today, lang) })}</Text>
+            <Text style={{ color: colors.gold, fontFamily: serif, fontSize: 19 }}>{t('Today is a slava: {name}', { name: slavaLabel(today, lang) })}</Text>
             {names.length ? <Body>{t('Name day (imendan) for: {names}', { names: names.join(', ') })}</Body> : null}
+            {myNameDay ? <Body>{t('Happy name day, {name}!', { name: name! })}</Body> : null}
           </>
         ) : null}
-        {mine ? (
+        {mine && left !== null ? (
           <Body muted>
-            {left === 0 ? t('Your slava is today. Slava mu i milost!') : t('Your slava, {name}, is in {n} days.', { name: slavaName(mine, lang), n: left ?? 0 })}
+            {left === 0 ? t('Your slava is today. Slava mu i milost!') : t('Your slava, {name}, is in {n} days.', { name: slavaLabel(mine, lang), n: left })}
           </Body>
         ) : null}
       </Card>

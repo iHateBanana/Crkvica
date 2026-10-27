@@ -51,7 +51,7 @@ export function applyTheme(name: ThemeName) {
   fastColor['wine-oil'] = colors.gold;
   s = makeStyles();
 }
-export const redLetter = '#ff8566';
+export const redLetter = '#ff4d4d';
 
 export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
   const inner = <View style={s.column}>{children}</View>;

@@ -2,10 +2,9 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Switch, View } from 'react-native';
 import { useAuth } from '../../src/lib/auth';
-import { slavaName } from '../../src/lib/DayParts';
 import { LANGS, useT } from '../../src/lib/i18n';
 import { FastRulesEditor } from '../../src/lib/FastEditor';
-import { SLAVAS } from '../../src/lib/slava';
+import { searchSlavas, slavaById, slavaDates, slavaLabel } from '../../src/lib/slava';
 import { useTheme } from '../../src/lib/theme';
 import { supabase } from '../../src/lib/supabase';
 import { Body, Button, Card, Chips, Input, Label, PageHeader, Screen } from '../../src/lib/ui';
@@ -74,11 +73,14 @@ function DeleteAccount() {
 export default function Profile() {
   const router = useRouter();
   const { profile, session, updateProfile, lang, setLang } = useAuth();
-  const { t } = useT();
+  const { t, locale } = useT();
   const { theme, setTheme } = useTheme();
   const [nm, setNm] = useState(profile?.display_name?.includes('@') ? '' : profile?.display_name ?? '');
   const [nmSaved, setNmSaved] = useState(false);
+  const [slavaQ, setSlavaQ] = useState('');
   if (!profile) return null;
+  const mySlava = slavaById(profile.slava);
+  const shownSlavas = searchSlavas(slavaQ);
   return (
     <Screen>
       <PageHeader title={t('Profile')} subtitle={session?.user.is_anonymous ? t('Guest') : session?.user.email ?? undefined} />
@@ -125,12 +127,18 @@ export default function Profile() {
         {profile.show_slava ? (
           <>
             <Label>{t('My family slava')}</Label>
-            <Chips
-              options={[{ value: '', label: t('None') }, ...SLAVAS.map((s) => ({ value: s.id, label: slavaName(s, lang) }))]}
-              value={profile.slava ?? ''}
-              onChange={(v) => updateProfile({ slava: v || null })}
-            />
-          </>
+            <Input placeholder={t('Search slavas')} value={slavaQ} onChangeText={setSlavaQ} autoCorrect={false} autoCapitalize="none" />
+            {shownSlavas.length ? (
+              <Chips
+                options={[
+                  { value: '', label: t('None') },
+                  ...shownSlavas.map((s) => ({ value: s.id, label: `${slavaLabel(s, lang)}\n${slavaDates(s, locale, t('Julian'))}` })),
+                ]}
+                value={mySlava?.id ?? ''}
+                onChange={(v) => updateProfile({ slava: v || null })}
+              />
+            ) : <Body muted small>{t('No slava matches your search.')}</Body>}
+            {mySlava ? <Body muted small>{slavaLabel(mySlava, lang)} · {slavaDates(mySlava, locale, t('Julian'))}</Body> : null}          </>
         ) : null}
       </Card>
 

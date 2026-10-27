@@ -2,7 +2,7 @@ export type CalendarStyle = 'new' | 'old';
 
 const DAY = 86400000;
 
-// Dates are handled at local noon to avoid DST edge cases.
+// Dates are handled at local noon, so a DST change (23 or 25 hour day) can never move a date.
 export const makeDate = (y: number, m: number, d: number) => new Date(y, m - 1, d, 12);
 export const addDays = (d: Date, n: number) => makeDate(d.getFullYear(), d.getMonth() + 1, d.getDate() + n);
 export const dayDiff = (a: Date, b: Date) =>
@@ -11,19 +11,28 @@ export const iso = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 export const fromIso = (s: string) => makeDate(+s.slice(0, 4), +s.slice(5, 7), +s.slice(8, 10));
 
+// The Julian calendar runs 13 days behind the Gregorian one from 1 Mar 1900 to 28 Feb 2100 (Julian dates).
+// This is the only place the offset is applied.
+const JULIAN_OFFSET = 13;
+
+// Julian calendar date (as a Date holding the Julian year/month/day) of a civil Gregorian date.
+export const julianOf = (d: Date) => addDays(d, -JULIAN_OFFSET);
+
+// Civil Gregorian date of a Julian calendar date.
+export const julianToCivil = (y: number, m: number, d: number) => addDays(makeDate(y, m, d), JULIAN_OFFSET);
+
 // Orthodox Pascha (Meeus Julian algorithm) converted to the civil Gregorian date.
-// The +13 day offset is valid for 1900-2099.
 export function pascha(year: number): Date {
   const a = year % 4, b = year % 7, c = year % 19;
   const d = (19 * c + 15) % 30;
   const e = (2 * a + 4 * b - d + 34) % 7;
   const month = Math.floor((d + e + 114) / 31);
   const day = ((d + e + 114) % 31) + 1;
-  return addDays(makeDate(year, month, day), 13);
+  return julianToCivil(year, month, day);
 }
 
 // On the Old (Julian) calendar fixed feasts fall on the same Julian date number, 13 days later in civil time.
-export const liturgicalDate = (d: Date, style: CalendarStyle) => (style === 'old' ? addDays(d, -13) : d);
+export const liturgicalDate = (d: Date, style: CalendarStyle) => (style === 'old' ? julianOf(d) : d);
 
 const STORY: Record<string, string> = {
   'Circumcision of the Lord / St. Basil the Great': 'Eight days after His birth, Christ was circumcised and given the name Jesus. The same day the Church honors St. Basil the Great (c. 330-379), Archbishop of Caesarea in Cappadocia. Born to a family of saints, he studied in Athens, gave away his wealth and became a monk. As bishop he built a vast complex for the poor and sick, defended the Nicene faith against the Arians, and wrote the Divine Liturgy that bears his name and is served on this day.',
@@ -49,6 +58,7 @@ const RED_EXTRA = new Set([
   'Holy Apostles Peter & Paul',
   'Beheading of St. John the Baptist',
   'Synaxis of St. John the Baptist',
+  'Protection of the Theotokos',
 ]);
 
 const ABOUT: Record<string, string> = {
@@ -148,7 +158,7 @@ export type FastLevel = 'none' | 'strict' | 'wine-oil' | 'fish';
 export interface Fast { level: FastLevel; label: string; detail: string; }
 
 export const DETAIL: Record<FastLevel, string> = {
-  none: 'No fast - all foods permitted.',
+  none: 'All foods permitted.',
   strict: 'Strict fast: no meat, dairy, eggs, fish, oil or wine.',
   'wine-oil': 'Wine and oil permitted; no meat, dairy, eggs or fish.',
   fish: 'Fish, wine and oil permitted; no meat, dairy or eggs.',
@@ -199,7 +209,7 @@ export function fastOn(d: Date, style: CalendarStyle): Fast {
 
   // Apostles' Fast: Monday after All Saints until the eve of Peter & Paul
   const start = addDays(p, 57);
-  const end = addDays(makeDate(y, 6, 28), style === 'old' ? 13 : 0);
+  const end = style === 'old' ? julianToCivil(y, 6, 28) : makeDate(y, 6, 28);
   if (dayDiff(d, start) >= 0 && dayDiff(d, end) <= 0) {
     if (m === 6 && day === 24) return mk('fish', "Apostles' Fast - Nativity of St. John the Baptist");
     return mk(wedFri ? 'wine-oil' : 'fish', "Apostles' Fast");
@@ -215,6 +225,33 @@ export function fastOn(d: Date, style: CalendarStyle): Fast {
   return mk('none', 'No fast');
 }
 
-export function describeDay(d: Date, style: CalendarStyle) {
-  return { feasts: feastsOn(d, style), fast: fastOn(d, style), liturgicalDate: liturgicalDate(d, style) };
+// Everything the app knows locally about a civil date. Every screen goes through this, so the
+// Julian date, feasts and fast can never disagree. Saints and readings are added by useDayInfo (orthocal.ts).
+export function getDayInfo(d: Date, style: CalendarStyle) {
+  return { date: d, style, julian: julianOf(d), liturgicalDate: liturgicalDate(d, style), feasts: feastsOn(d, style), fast: fastOn(d, style) };
 }
+
+const STOP = new Set(['great', 'holy', 'saint', 'martyr', 'greatmartyr', 'apostle', 'apostles', 'venerable', 'father', 'fathers', 'hieromartyr', 'the', 'and', 'of']);
+const stems = (s: string) =>
+  new Set(
+    s.toLowerCase().replace(/\([^)]*\)/g, ' ').split(/[^a-z]+/).filter((w) => w.length >= 4 && !STOP.has(w)).map((w) => w.slice(0, 5)),
+  );
+
+// Orthocal commemorations that are not already shown as a main feast (matched loosely: the names differ between sources).
+export function remainingCommemorations(saints: string[], shown: string[]): string[] {
+  const left = [...saints];
+  for (const name of shown) {
+    const a = stems(name);
+    if (!a.size) continue;
+    const i = left.findIndex((s) => {
+      const b = stems(s);
+      if (!b.size) return false;
+      let shared = 0;
+      a.forEach((w) => { if (b.has(w)) shared++; });
+      return shared >= Math.min(2, a.size, b.size);
+    });
+    if (i >= 0) left.splice(i, 1);
+  }
+  return left;
+}
+

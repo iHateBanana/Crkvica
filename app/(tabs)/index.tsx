@@ -9,8 +9,8 @@ import { useAuth } from '../../src/lib/auth';
 import { Readings, SaintStories, SaintsList, SlavaCard } from '../../src/lib/DayParts';
 import { useT } from '../../src/lib/i18n';
 import { FastEditor, useFastOverrides } from '../../src/lib/FastEditor';
-import { useOrthoDay } from '../../src/lib/orthocal';
-import { describeDay, fromIso, iso, upcomingRedLetter } from '../../src/lib/orthodox';
+import { useDayInfo } from '../../src/lib/orthocal';
+import { fromIso, getDayInfo, iso, remainingCommemorations, upcomingRedLetter } from '../../src/lib/orthodox';
 import { streakFrom } from '../../src/lib/streak';
 import { supabase } from '../../src/lib/supabase';
 import { Body, Card, Check, colors, Cross, fastColor, Hero, Label, Meander, Ornament, Orb, Pill, redLetter, Screen, serif, Title } from '../../src/lib/ui';
@@ -24,10 +24,9 @@ export default function Today() {
   const style = profile?.calendar_style ?? 'new';
   const today = new Date();
   const key = iso(today);
-  const { feasts, fast: baseFast, liturgicalDate } = describeDay(today, style);
+  const { feasts, fast: baseFast, liturgicalDate, ortho, loading: orthoLoading } = useDayInfo(today, style);
   const { apply: applyFast, set: setFast } = useFastOverrides();
   const fast = applyFast(today, baseFast);
-  const { day: ortho, loading: orthoLoading } = useOrthoDay(today, style);
   const red = feasts.find((f) => f.red) ?? (ortho && ortho.feastLevel >= 7 ? { name: ortho.saints[0] ?? '', rank: 'great' as const, red: true, about: undefined, story: undefined } : undefined);
   const others = feasts.filter((f) => f !== red);
   const headline = red ?? others[0];
@@ -75,7 +74,7 @@ export default function Today() {
     const moods = (h: Checkin) => (h.mood ?? '').split(',').filter(Boolean);
     const withMood = history.filter((h) => h.mood);
     if (withMood.length < 5) return t('Check in on {n} more day(s) to unlock your patterns.', { n: 5 - withMood.length });
-    const isFast = (h: Checkin) => describeDay(fromIso(h.day), style).fast.level !== 'none';
+    const isFast = (h: Checkin) => getDayInfo(fromIso(h.day), style).fast.level !== 'none';
     const fasting = withMood.filter(isFast).flatMap(moods);
     const normal = withMood.filter((h) => !isFast(h)).flatMap(moods);
     const prayed = withMood.filter((h) => h.deeds.includes('Prayed')).flatMap(moods);
@@ -120,11 +119,11 @@ export default function Today() {
         ) : orthoLoading ? <Body muted small>{t('Loading…')}</Body> : null}
       </Hero>
 
-      <SaintsList saints={ortho?.saints ?? []} />
+      <SaintsList saints={remainingCommemorations(ortho?.saints ?? [], mainName ? [mainName] : [])} />
 
       <Readings day={ortho} loading={orthoLoading} />
 
-      {profile?.show_slava ? <SlavaCard date={today} mySlava={profile.slava} /> : null}
+      {profile?.show_slava ? <SlavaCard date={today} mySlava={profile.slava} name={profile.display_name} /> : null}
 
       <Label>{t('Fasting')}</Label>
       <Card>

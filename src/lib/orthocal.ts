@@ -1,9 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
-import { addDays, CalendarStyle, iso } from './orthodox';
+import { CalendarStyle, getDayInfo, iso, liturgicalDate, makeDate } from './orthodox';
 
 export interface OrthoReading { source: string; display: string; short_display: string; text: string; }
 export interface OrthoDay {
+  date: string; // the day Orthocal says it is describing (Julian date for the Old calendar), ISO
   title: string;
   saints: string[];
   feastLevel: number;
@@ -33,6 +34,7 @@ function parse(j: any): OrthoDay {
       text: (r.passage ?? []).map((v: any) => v.content).join(' '),
     }));
   return {
+    date: iso(makeDate(j.year, j.month, j.day)),
     title: j.summary_title ?? '',
     saints: String(j.summary_title ?? '').split(';').map((s: string) => s.trim()).filter(Boolean),
     feastLevel: j.feast_level ?? 0,
@@ -41,17 +43,23 @@ function parse(j: any): OrthoDay {
   };
 }
 
-// New calendar uses the civil date; Old calendar uses the equivalent Julian date.
+// Orthocal's /julian/ and /gregorian/ endpoints both take the CIVIL (Gregorian) date in the path.
+// /julian/ then returns the Old Calendar day for it (its own year/month/day fields are the Julian date),
+// so the date must NOT be converted before the request.
+export function orthocalUrl(d: Date, style: CalendarStyle): string {
+  return `https://orthocal.info/api/${style === 'old' ? 'julian' : 'gregorian'}/${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}/`;
+}
+
 export async function fetchDay(d: Date, style: CalendarStyle): Promise<OrthoDay | null> {
-  const key = `oc1-${style}-${iso(d)}`;
+  const key = `oc2-${style}-${iso(d)}`;
   try {
     const cached = await AsyncStorage.getItem(key);
     if (cached) return JSON.parse(cached);
-    const q = style === 'old' ? addDays(d, -13) : d;
-    const url = `https://orthocal.info/api/${style === 'old' ? 'julian' : 'gregorian'}/${q.getFullYear()}/${q.getMonth() + 1}/${q.getDate()}/`;
-    const res = await fetch(url);
+    const res = await fetch(orthocalUrl(d, style));
     if (!res.ok) return null;
     const day = parse(await res.json());
+    // Never show a different day than the one asked for.
+    if (day.date !== iso(liturgicalDate(d, style))) return null;
     await AsyncStorage.setItem(key, JSON.stringify(day));
     return day;
   } catch {
@@ -71,3 +79,11 @@ export function useOrthoDay(d: Date, style: CalendarStyle) {
   }, [k, style]);
   return { day, loading };
 }
+
+// The one lookup used by Today and Calendar: local day info plus saints and readings from Orthocal.
+export function useDayInfo(d: Date, style: CalendarStyle) {
+  const info = getDayInfo(d, style);
+  const { day: ortho, loading } = useOrthoDay(d, style);
+  return { ...info, ortho, loading };
+}
+
