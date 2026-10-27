@@ -1,4 +1,4 @@
-git commit -m "Theosis app"git commit -m "Theosis app"[build]
+[build]
   command = "npx expo export --platform web"
   publish = "dist"
 
