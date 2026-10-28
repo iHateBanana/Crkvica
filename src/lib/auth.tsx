@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Session } from '@supabase/supabase-js';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import type { Lang } from './i18n';
-import { Profile, supabase } from './supabase';
+import { getStoredSession, Profile, supabase } from './supabase';
 
 interface Ctx {
   session: Session | null;
@@ -26,13 +26,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem('lang').then((l) => { if (l === 'en' || l === 'sr' || l === 'sr-Latn') setLangState(l); });
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      if (!data.session) setLoading(false);
-    });
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => {
+    supabase.auth.getSession().then(async ({ data }) => {
+      // Offline with an expired token, getSession returns null; keep the user in with the session saved on the device.
+      const s = data.session ?? (await getStoredSession());
       setSession(s);
-      if (!s) { setProfile(null); setLoading(false); }
+      if (!s) setLoading(false);
+    });
+    const { data } = supabase.auth.onAuthStateChange((e, s) => {
+      if (s) setSession(s);
+      else if (e === 'SIGNED_OUT') { setSession(null); setProfile(null); setLoading(false); }
     });
     return () => data.subscription.unsubscribe();
   }, []);
