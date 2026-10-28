@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Switch, View } from 'react-native';
+import { Platform, Switch, View } from 'react-native';
 import { useAuth } from '../../src/lib/auth';
 import { LANGS, useT } from '../../src/lib/i18n';
 import { FastRulesEditor } from '../../src/lib/FastEditor';
@@ -66,6 +66,50 @@ function DeleteAccount() {
       {err ? <Body muted>{err}</Body> : null}
       <Button label={t('Yes, delete everything')} onPress={go} />
       <Button variant="ghost" label={t('Cancel')} onPress={() => setStep(0)} />
+    </Card>
+  );
+}
+
+function Feedback() {
+  const { t } = useT();
+  const { session } = useAuth();
+  const [msg, setMsg] = useState('');
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  // Netlify Forms only exists on the deployed web build (see the hidden form in public/index.html).
+  if (Platform.OS !== 'web') return null;
+  async function send() {
+    if (!msg.trim()) return;
+    setStatus('sending');
+    try {
+      const body = new URLSearchParams({
+        'form-name': 'feedback',
+        message: msg.trim(),
+        email: session?.user.email ?? '',
+        'app-user': session?.user.id ?? '',
+      });
+      const r = await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() });
+      if (!r.ok) throw new Error(String(r.status));
+      setMsg('');
+      setStatus('sent');
+    } catch {
+      setStatus('error');
+    }
+  }
+  return (
+    <Card>
+      <Body>{t('Feedback')}</Body>
+      <Body muted small>{t('Tell us what you think or report a problem.')}</Body>
+      <Input
+        placeholder={t('Your feedback')}
+        value={msg}
+        onChangeText={(v) => { setMsg(v); if (status !== 'sending') setStatus('idle'); }}
+        multiline
+        maxLength={2000}
+        style={{ minHeight: 90, textAlignVertical: 'top' }}
+      />
+      {status === 'sent' && <Body muted small>{t('Thank you for your feedback!')}</Body>}
+      {status === 'error' && <Body muted small>{t('Could not send. Please try again.')}</Body>}
+      <Button label={status === 'sending' ? '...' : t('Send feedback')} onPress={send} />
     </Card>
   );
 }
@@ -163,6 +207,7 @@ export default function Profile() {
           </View>
         </Card>
       )}
+      <Feedback />
       <Button variant="ghost" label={t('Sign out')} onPress={() => supabase.auth.signOut()} />
       <DeleteAccount />
       <Button variant="ghost" label={t('Privacy Policy')} onPress={() => router.push('/privacy')} />
