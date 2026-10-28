@@ -75,7 +75,7 @@ function Feedback() {
   const { session } = useAuth();
   const [msg, setMsg] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
-  // Netlify Forms only exists on the deployed web build (see the hidden form in public/index.html).
+  // Netlify Forms only exists on the deployed web build (the form is declared in public/feedback.html, a static file so the SPA redirect doesn't swallow the POST).
   if (Platform.OS !== 'web') return null;
   async function send() {
     if (!msg.trim()) return;
@@ -87,7 +87,7 @@ function Feedback() {
         email: session?.user.email ?? '',
         'app-user': session?.user.id ?? '',
       });
-      const r = await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() });
+      const r = await fetch('/feedback.html', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() });
       if (!r.ok) throw new Error(String(r.status));
       setMsg('');
       setStatus('sent');
