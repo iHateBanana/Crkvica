@@ -59,6 +59,12 @@ const RED_EXTRA = new Set([
   'Beheading of St. John the Baptist',
   'Synaxis of St. John the Baptist',
   'Protection of the Theotokos',
+  'St. Sava of Serbia',
+  'St. Prince Lazar (Vidovdan)',
+  'Holy Prophet Elijah (Ilindan)',
+  'St. Paraskeva (Petka)',
+  'Holy Apostle Andrew the First-called',
+  'St. Stephen the Protomartyr (Stefanovdan)',
 ]);
 
 const ABOUT: Record<string, string> = {
@@ -85,19 +91,30 @@ const ABOUT: Record<string, string> = {
   'Equals-to-the-Apostles Constantine & Helen': 'The Emperor and his mother, who found the True Cross.',
   'Beheading of St. John the Baptist': 'The Forerunner is martyred for speaking the truth. A strict fast day.',
   'Nativity of St. John the Baptist': 'The birth of the Forerunner to Zachariah and Elizabeth.',
+  'St. Sava of Serbia': 'The first Archbishop of the autocephalous Serbian Church (1219), enlightener and founder of Serbian monasticism. Patron of schools and the Serbian people.',
+  'Ss. Cyril and Methodius': 'The brothers from Thessalonica who created the Slavic alphabet and translated Scripture and services for the Slavs.',
+  'St. Prince Lazar (Vidovdan)': 'Prince Lazar and the Serbian army fell at the Battle of Kosovo in 1389, choosing the heavenly kingdom over earthly. Vidovdan is kept on this day.',
+  'Holy Prophet Elijah (Ilindan)': 'The Old Testament prophet taken up in a fiery chariot. In Serbian tradition he is the master of thunder, rain and harvest.',
+  'St. Paraskeva (Petka)': 'Paraskeva of Epivates (11th century), a pious ascetic venerated among the Serbs as Sveta Petka, helper of the sick and of women.',
+  'Holy Apostle Andrew the First-called': 'The first disciple called by Christ, brother of Peter. Tradition says he preached around the Black Sea and was crucified at Patras.',
+  'St. Stephen the Protomartyr (Stefanovdan)': 'The first deacon and first martyr of the Church, stoned in Jerusalem for confessing Christ. Also commemorates the Serbian royal saint Stefan.',
 };
 
 const FIXED: Record<string, Feast> = {
   '01-01': { name: 'Circumcision of the Lord / St. Basil the Great', rank: 'major' },
   '01-06': { name: 'Theophany (Baptism of the Lord)', rank: 'great' },
   '01-07': { name: 'Synaxis of St. John the Baptist', rank: 'major' },
+  '01-14': { name: 'St. Sava of Serbia', rank: 'major' },
   '01-30': { name: 'Three Hierarchs', rank: 'minor' },
   '02-02': { name: 'Meeting of the Lord', rank: 'great' },
   '03-25': { name: 'Annunciation of the Theotokos', rank: 'great' },
   '04-23': { name: 'Great Martyr George', rank: 'minor' },
+  '05-11': { name: 'Ss. Cyril and Methodius', rank: 'minor' },
   '05-21': { name: 'Equals-to-the-Apostles Constantine & Helen', rank: 'minor' },
+  '06-15': { name: 'St. Prince Lazar (Vidovdan)', rank: 'major' },
   '06-24': { name: 'Nativity of St. John the Baptist', rank: 'major' },
   '06-29': { name: 'Holy Apostles Peter & Paul', rank: 'major' },
+  '07-20': { name: 'Holy Prophet Elijah (Ilindan)', rank: 'major' },
   '08-06': { name: 'Transfiguration of the Lord', rank: 'great' },
   '08-15': { name: 'Dormition of the Theotokos', rank: 'great' },
   '08-29': { name: 'Beheading of St. John the Baptist', rank: 'major' },
@@ -105,13 +122,16 @@ const FIXED: Record<string, Feast> = {
   '09-08': { name: 'Nativity of the Theotokos', rank: 'great' },
   '09-14': { name: 'Exaltation of the Holy Cross', rank: 'great' },
   '10-01': { name: 'Protection of the Theotokos', rank: 'minor' },
+  '10-14': { name: 'St. Paraskeva (Petka)', rank: 'major' },
   '10-26': { name: 'Great Martyr Demetrios', rank: 'minor' },
   '11-08': { name: 'Synaxis of the Archangel Michael', rank: 'major' },
   '11-14': { name: 'Holy Apostle Philip', rank: 'minor' },
   '11-21': { name: 'Entry of the Theotokos into the Temple', rank: 'great' },
+  '11-30': { name: 'Holy Apostle Andrew the First-called', rank: 'minor' },
   '12-06': { name: 'St. Nicholas the Wonderworker', rank: 'major' },
   '12-25': { name: 'Nativity of the Lord', rank: 'great' },
   '12-26': { name: 'Synaxis of the Theotokos', rank: 'minor' },
+  '12-27': { name: 'St. Stephen the Protomartyr (Stefanovdan)', rank: 'major' },
 };
 
 // Offsets are days from Pascha.
