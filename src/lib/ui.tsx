@@ -101,22 +101,53 @@ export function Spinner({ size = 64, label }: { size?: number; label?: string })
 // more reliable than the native-style hook. The extra 12px keeps content clear of the island.
 export const webTopInset: any = Platform.OS === 'web' ? 'calc(env(safe-area-inset-top, 0px) + 12px)' : 0;
 
+const FRAME_GAP = 14;
+
+// Gold meander frame hugging the screen edges, inset by the same gap as the top (below the Dynamic Island).
+function Corner() {
+  return (
+    <Svg width={18} height={18} style={{ opacity: 0.75 }}>
+      <Path d="M2 2 H16 V16 H2 Z M6 6 H12 V12 H6 Z" fill="none" stroke={colors.gold} strokeWidth={1.6} strokeLinejoin="miter" />
+    </Svg>
+  );
+}
+
+function Frame() {
+  const row = { flexDirection: 'row' as const, alignItems: 'center' as const };
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, paddingTop: webTopInset, paddingHorizontal: FRAME_GAP, paddingBottom: FRAME_GAP }}>
+      <View style={row}>
+        <Corner />
+        <Meander style={{ flex: 1 }} />
+        <Corner />
+      </View>
+      <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
+        <SideMeander side="left" style={{ transform: [{ rotate: '180deg' }] }} />
+        <SideMeander side="right" />
+      </View>
+      <View style={row}>
+        <Corner />
+        <Meander style={{ flex: 1, transform: [{ rotate: '180deg' }] }} />
+        <Corner />
+      </View>
+    </View>
+  );
+}
+
 export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
-  const inner = (
-    <>
-      <Meander style={{ width: '100%', marginTop: 12 }} />
-      <View style={[s.column, { paddingTop: 6 }]}>{children}</View>
-    </>
+  // The frame is part of the page: it spans the full content height, so scrolling reveals more of it.
+  const page = (
+    <View style={{ flexGrow: 1, alignItems: 'center', paddingTop: webTopInset, paddingBottom: FRAME_GAP + 18 }}>
+      <Frame />
+      <View style={[s.column, { paddingTop: 40, paddingBottom: 24, flexGrow: 1 }]}>{children}</View>
+    </View>
   );
   return (
     <SafeAreaView style={s.screen} edges={Platform.OS === 'web' ? [] : ['top']}>
       <Lattice />
-      <SideMeander side="left" />
-      <SideMeander side="right" />
-      <Meander style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }} />
       {scroll ? (
-        <ScrollView contentContainerStyle={{ alignItems: 'center', paddingBottom: 58, paddingTop: webTopInset }} keyboardShouldPersistTaps="handled">{inner}</ScrollView>
-      ) : <View style={{ flex: 1, paddingTop: webTopInset }}>{inner}</View>}
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">{page}</ScrollView>
+      ) : <View style={{ flex: 1 }}>{page}</View>}
     </SafeAreaView>
   );
 }
@@ -187,7 +218,7 @@ export function Meander({ style }: { style?: object }) {
 }
 
 // Vertical meander running down one screen edge, fixed while content scrolls.
-function SideMeander({ side }: { side: 'left' | 'right' }) {
+function SideMeander({ side, style }: { side: 'left' | 'right'; style?: object }) {
   const [h, setH] = useState(0);
   const n = Math.max(1, Math.round(h / 20));
   const tile = h ? h / n : 20;
@@ -195,7 +226,7 @@ function SideMeander({ side }: { side: 'left' | 'right' }) {
     <View
       pointerEvents="none"
       onLayout={(e) => setH(e.nativeEvent.layout.height)}
-      style={{ position: 'absolute', top: 0, bottom: 18, [side]: 0, width: 18, opacity: 0.75 }}
+      style={[{ width: 18, opacity: 0.75 }, style]}
     >
       {h ? (
         <Svg width={18} height={h}>
@@ -379,7 +410,7 @@ export function Chips<T extends string>({ options, value, onChange, center }: { 
 
 const makeStyles = () => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  column: { width: '100%', maxWidth: 560, alignSelf: 'center', padding: 18, paddingHorizontal: 28, gap: 12 },
+  column: { width: '100%', maxWidth: 560, alignSelf: 'center', padding: 18, paddingHorizontal: 36, gap: 12 },
   card: { backgroundColor: colors.card, borderRadius: 20, padding: 16, gap: 8, borderWidth: 1, borderColor: colors.border },
   hero: { borderRadius: 26, padding: 22, gap: 10, overflow: 'hidden', borderWidth: 2, borderColor: colors.gold },
   heroInner: { position: 'absolute', top: 6, left: 6, right: 6, bottom: 6, borderRadius: 20, borderWidth: 1, borderColor: ga(0.45) },
