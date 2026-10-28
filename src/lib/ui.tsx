@@ -111,6 +111,8 @@ export function Screen({ children, scroll = true }: { children: ReactNode; scrol
   return (
     <SafeAreaView style={s.screen} edges={Platform.OS === 'web' ? [] : ['top']}>
       <Lattice />
+      <SideMeander side="left" />
+      <SideMeander side="right" />
       {scroll ? (
         <ScrollView contentContainerStyle={{ alignItems: 'center', paddingBottom: 40, paddingTop: webTopInset }} keyboardShouldPersistTaps="handled">{inner}</ScrollView>
       ) : <View style={{ flex: 1, paddingTop: webTopInset }}>{inner}</View>}
@@ -177,6 +179,33 @@ export function Meander({ style }: { style?: object }) {
             </Pattern>
           </Defs>
           <Rect width={w} height="18" fill="url(#meander)" />
+        </Svg>
+      ) : null}
+    </View>
+  );
+}
+
+// Vertical meander running down one screen edge, fixed while content scrolls.
+function SideMeander({ side }: { side: 'left' | 'right' }) {
+  const [h, setH] = useState(0);
+  const n = Math.max(1, Math.round(h / 20));
+  const tile = h ? h / n : 20;
+  return (
+    <View
+      pointerEvents="none"
+      onLayout={(e) => setH(e.nativeEvent.layout.height)}
+      style={{ position: 'absolute', top: 0, bottom: 0, [side]: 0, width: 18, opacity: 0.75 }}
+    >
+      {h ? (
+        <Svg width={18} height={h}>
+          <Defs>
+            <Pattern id={`side-${side}`} width={18} height={tile} patternUnits="userSpaceOnUse">
+              <G transform={`scale(1 ${tile / 20}) translate(18 0) rotate(90)`}>
+                <Path d="M0 16 H20 M16 16 V2 H4 V12 H12 V6 H8" fill="none" stroke={colors.gold} strokeWidth={1.6} strokeLinecap="square" />
+              </G>
+            </Pattern>
+          </Defs>
+          <Rect width={18} height={h} fill={`url(#side-${side})`} />
         </Svg>
       ) : null}
     </View>
@@ -349,7 +378,7 @@ export function Chips<T extends string>({ options, value, onChange, center }: { 
 
 const makeStyles = () => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  column: { width: '100%', maxWidth: 560, alignSelf: 'center', padding: 18, gap: 12 },
+  column: { width: '100%', maxWidth: 560, alignSelf: 'center', padding: 18, paddingHorizontal: 28, gap: 12 },
   card: { backgroundColor: colors.card, borderRadius: 20, padding: 16, gap: 8, borderWidth: 1, borderColor: colors.border },
   hero: { borderRadius: 26, padding: 22, gap: 10, overflow: 'hidden', borderWidth: 2, borderColor: colors.gold },
   heroInner: { position: 'absolute', top: 6, left: 6, right: 6, bottom: 6, borderRadius: 20, borderWidth: 1, borderColor: ga(0.45) },
