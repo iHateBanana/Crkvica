@@ -176,8 +176,7 @@ export default function Today() {
         ))}
       </Card>
 
-      <Meander style={{ marginTop: 8 }} />
-      <Text style={{ color: colors.muted, textAlign: 'center', fontFamily: serif, fontStyle: 'italic', fontSize: 14 }}>{t('Glory to God for all things.')}</Text>
+      <Text style={{ color: colors.muted, textAlign: 'center', fontFamily: serif, fontStyle: 'italic', fontSize: 14, marginTop: 8 }}>{t('Glory to God for all things.')}</Text>
       <Ornament style={{ marginBottom: 8 }} />
     </Screen>
   );

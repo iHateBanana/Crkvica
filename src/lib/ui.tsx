@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ReactNode, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
+import { Animated, Easing, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, G, Line, Path, Pattern, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg';
 
@@ -98,48 +98,53 @@ export function Spinner({ size = 64, label }: { size?: number; label?: string })
 }
 
 // On the web (installed PWA) the notch / Dynamic Island inset comes straight from the browser's CSS env(), which is
-// more reliable than the native-style hook. The extra 12px keeps content clear of the island.
-export const webTopInset: any = Platform.OS === 'web' ? 'calc(env(safe-area-inset-top, 0px) + 12px)' : 0;
+// more reliable than the native-style hook. The extra 24px keeps content clear of the island.
+export const webTopInset: any = Platform.OS === 'web' ? 'calc(env(safe-area-inset-top, 0px) + 24px)' : 0;
 
 const FRAME_GAP = 14;
+const FRAME_GAP_SMALL = 6;
+const SMALL_SCREEN = 600;
 
 // Gold meander frame hugging the screen edges, inset by the same gap as the top (below the Dynamic Island).
-function Corner() {
+function Corner({ size = 18 }: { size?: number }) {
   return (
-    <Svg width={18} height={18} style={{ opacity: 0.75 }}>
+    <Svg width={size} height={size} viewBox="0 0 18 18" style={{ opacity: 0.75 }}>
       <Path d="M2 2 H16 V16 H2 Z M6 6 H12 V12 H6 Z" fill="none" stroke={colors.gold} strokeWidth={1.6} strokeLinejoin="miter" />
     </Svg>
   );
 }
 
-function Frame() {
+function Frame({ size, gap }: { size: number; gap: number }) {
   const row = { flexDirection: 'row' as const, alignItems: 'center' as const };
   return (
-    <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, paddingTop: webTopInset, paddingHorizontal: FRAME_GAP, paddingBottom: FRAME_GAP }}>
+    <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, paddingTop: webTopInset, paddingHorizontal: gap, paddingBottom: gap }}>
       <View style={row}>
-        <Corner />
-        <Meander style={{ flex: 1 }} />
-        <Corner />
+        <Corner size={size} />
+        <Meander size={size} style={{ flex: 1 }} />
+        <Corner size={size} />
       </View>
       <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
-        <SideMeander side="left" style={{ transform: [{ rotate: '180deg' }] }} />
-        <SideMeander side="right" />
+        <SideMeander size={size} side="left" style={{ transform: [{ rotate: '180deg' }] }} />
+        <SideMeander size={size} side="right" />
       </View>
       <View style={row}>
-        <Corner />
-        <Meander style={{ flex: 1, transform: [{ rotate: '180deg' }] }} />
-        <Corner />
+        <Corner size={size} />
+        <Meander size={size} style={{ flex: 1, transform: [{ rotate: '180deg' }] }} />
+        <Corner size={size} />
       </View>
     </View>
   );
 }
 
 export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
+  const small = useWindowDimensions().width < SMALL_SCREEN;
+  const size = small ? 11 : 18;
+  const gap = small ? FRAME_GAP_SMALL : FRAME_GAP;
   // The frame is part of the page: it spans the full content height, so scrolling reveals more of it.
   const page = (
-    <View style={{ flexGrow: 1, alignItems: 'center', paddingTop: webTopInset, paddingBottom: FRAME_GAP + 18 }}>
-      <Frame />
-      <View style={[s.column, { paddingTop: 40, paddingBottom: 24, flexGrow: 1 }]}>{children}</View>
+    <View style={{ flexGrow: 1, alignItems: 'center', paddingTop: webTopInset, paddingBottom: gap + size }}>
+      <Frame size={size} gap={gap} />
+      <View style={[s.column, { paddingTop: small ? 28 : 40, paddingBottom: 24, flexGrow: 1 }, small && { paddingHorizontal: gap + size + 8 }]}>{children}</View>
     </View>
   );
   return (
@@ -194,23 +199,24 @@ export function Ornament({ size = 14, style }: { size?: number; style?: object }
 }
 
 // Greek-key (meander) band, a classic border on Byzantine icons and church walls.
-export function Meander({ style }: { style?: object }) {
+export function Meander({ style, size = 18 }: { style?: object; size?: number }) {
   const [w, setW] = useState(0);
+  const k = size / 18;
   // Fit a whole number of tiles to the width so the last key isn't cut off.
-  const n = Math.max(1, Math.round(w / 20));
-  const tile = w ? w / n : 20;
+  const n = Math.max(1, Math.round(w / (20 * k)));
+  const tile = w ? w / n : 20 * k;
   return (
-    <View pointerEvents="none" onLayout={(e) => setW(e.nativeEvent.layout.width)} style={[{ height: 18, alignSelf: 'stretch', opacity: 0.75 }, style]}>
+    <View pointerEvents="none" onLayout={(e) => setW(e.nativeEvent.layout.width)} style={[{ height: size, alignSelf: 'stretch', opacity: 0.75 }, style]}>
       {w ? (
-        <Svg width={w} height="18">
+        <Svg width={w} height={size}>
           <Defs>
-            <Pattern id="meander" width={tile} height={18} patternUnits="userSpaceOnUse">
-              <G transform={`scale(${tile / 20} 1)`}>
+            <Pattern id={`meander-${size}`} width={tile} height={size} patternUnits="userSpaceOnUse">
+              <G transform={`scale(${tile / 20} ${k})`}>
                 <Path d="M0 16 H20 M16 16 V2 H4 V12 H12 V6 H8" fill="none" stroke={colors.gold} strokeWidth={1.6} strokeLinecap="square" />
               </G>
             </Pattern>
           </Defs>
-          <Rect width={w} height="18" fill="url(#meander)" />
+          <Rect width={w} height={size} fill={`url(#meander-${size})`} />
         </Svg>
       ) : null}
     </View>
@@ -218,26 +224,27 @@ export function Meander({ style }: { style?: object }) {
 }
 
 // Vertical meander running down one screen edge, fixed while content scrolls.
-function SideMeander({ side, style }: { side: 'left' | 'right'; style?: object }) {
+function SideMeander({ side, style, size = 18 }: { side: 'left' | 'right'; style?: object; size?: number }) {
   const [h, setH] = useState(0);
-  const n = Math.max(1, Math.round(h / 20));
-  const tile = h ? h / n : 20;
+  const k = size / 18;
+  const n = Math.max(1, Math.round(h / (20 * k)));
+  const tile = h ? h / n : 20 * k;
   return (
     <View
       pointerEvents="none"
       onLayout={(e) => setH(e.nativeEvent.layout.height)}
-      style={[{ width: 18, opacity: 0.75 }, style]}
+      style={[{ width: size, opacity: 0.75 }, style]}
     >
       {h ? (
-        <Svg width={18} height={h}>
+        <Svg width={size} height={h}>
           <Defs>
-            <Pattern id={`side-${side}`} width={18} height={tile} patternUnits="userSpaceOnUse">
-              <G transform={`scale(1 ${tile / 20}) translate(18 0) rotate(90)`}>
+            <Pattern id={`side-${side}-${size}`} width={size} height={tile} patternUnits="userSpaceOnUse">
+              <G transform={`scale(${k} ${tile / 20}) translate(18 0) rotate(90)`}>
                 <Path d="M0 16 H20 M16 16 V2 H4 V12 H12 V6 H8" fill="none" stroke={colors.gold} strokeWidth={1.6} strokeLinecap="square" />
               </G>
             </Pattern>
           </Defs>
-          <Rect width={18} height={h} fill={`url(#side-${side})`} />
+          <Rect width={size} height={h} fill={`url(#side-${side}-${size})`} />
         </Svg>
       ) : null}
     </View>

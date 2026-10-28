@@ -18,6 +18,8 @@
       body { overflow: hidden; }
       #root { display: flex; height: 100%; flex: 1; }
       @supports (height: 100dvh) { html, body, #root { height: 100dvh; } }
+      /* Pin the app to the full screen so the Home Screen app reaches under the home indicator */
+      #root { position: fixed; top: 0; left: 0; right: 0; bottom: 0; height: auto !important; }
       #boot { flex: 1; display: flex; align-items: center; justify-content: center; background: #2b0a10; }
       html.blue, html.blue body, html.blue #boot { background-color: #0a1530; }
       #boot svg { width: 64px; height: 64px; fill: #e2b552; animation: boot-pulse 2.2s ease-in-out infinite; }
