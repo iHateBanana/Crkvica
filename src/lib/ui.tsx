@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ReactNode, useEffect, useRef } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, G, Line, Path, Pattern, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg';
@@ -156,16 +156,24 @@ export function Ornament({ size = 14, style }: { size?: number; style?: object }
 
 // Greek-key (meander) band, a classic border on Byzantine icons and church walls.
 export function Meander({ style }: { style?: object }) {
+  const [w, setW] = useState(0);
+  // Fit a whole number of tiles to the width so the last key isn't cut off.
+  const n = Math.max(1, Math.round(w / 20));
+  const tile = w ? w / n : 20;
   return (
-    <View pointerEvents="none" style={[{ height: 18, alignSelf: 'stretch', opacity: 0.75 }, style]}>
-      <Svg width="100%" height="18">
-        <Defs>
-          <Pattern id="meander" width={20} height={18} patternUnits="userSpaceOnUse">
-            <Path d="M0 16 H20 M16 16 V2 H4 V12 H12 V6 H8" fill="none" stroke={colors.gold} strokeWidth={1.6} strokeLinecap="square" />
-          </Pattern>
-        </Defs>
-        <Rect width="100%" height="18" fill="url(#meander)" />
-      </Svg>
+    <View pointerEvents="none" onLayout={(e) => setW(e.nativeEvent.layout.width)} style={[{ height: 18, alignSelf: 'stretch', opacity: 0.75 }, style]}>
+      {w ? (
+        <Svg width={w} height="18">
+          <Defs>
+            <Pattern id="meander" width={tile} height={18} patternUnits="userSpaceOnUse">
+              <G transform={`scale(${tile / 20} 1)`}>
+                <Path d="M0 16 H20 M16 16 V2 H4 V12 H12 V6 H8" fill="none" stroke={colors.gold} strokeWidth={1.6} strokeLinecap="square" />
+              </G>
+            </Pattern>
+          </Defs>
+          <Rect width={w} height="18" fill="url(#meander)" />
+        </Svg>
+      ) : null}
     </View>
   );
 }
