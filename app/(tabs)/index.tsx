@@ -109,7 +109,7 @@ export default function Today() {
           </View>
         </View>
         {headline?.about ? <Body muted>{t(headline.about)}</Body> : null}
-        {stories.length ? <SaintStories stories={stories} /> : hasStory ? (
+        {stories.length ? <SaintStories stories={stories} mainName={mainName} /> : hasStory ? (
           <>
             {showStory ? <Text style={{ color: colors.text, fontFamily: serif, fontSize: 16.5, lineHeight: 26 }}>{headline?.story}</Text> : null}
             <Pressable onPress={() => setShowStory(!showStory)}>

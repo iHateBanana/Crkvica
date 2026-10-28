@@ -6,14 +6,14 @@ import { celebratesName, daysUntilSlava, slavaById, slavaLabel, slavaOn } from '
 import { toLatin, useT } from './i18n';
 import { Body, Card, colors, Cross, Label, serif, Spinner } from './ui';
 
-function Story({ title, text, last }: { title: string; text: string; last?: boolean }) {
+function Story({ title, text, last, hideTitle }: { title: string; text: string; last?: boolean; hideTitle?: boolean }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
   return (
     <View style={{ paddingVertical: 12, gap: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: 'rgba(227,185,92,0.18)' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Cross size={16} color={colors.gold} />
-        <Text style={{ flex: 1, color: colors.text, fontFamily: serif, fontSize: 16.5, lineHeight: 22 }}>{title}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: hideTitle ? 'flex-end' : 'flex-start' }}>
+        {hideTitle ? null : <Cross size={16} color={colors.gold} />}
+        {hideTitle ? null : <Text style={{ flex: 1, color: colors.text, fontFamily: serif, fontSize: 16.5, lineHeight: 22 }}>{title}</Text>}
         <Pressable
           onPress={() => setOpen(!open)}
           hitSlop={6}
@@ -32,10 +32,18 @@ function Story({ title, text, last }: { title: string; text: string; last?: bool
   );
 }
 
-export function SaintStories({ stories }: { stories: OrthoDay['stories'] }) {
+const plain = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+// `mainName` is the feast already shown as the page headline, so its story row doesn't repeat the title.
+export function SaintStories({ stories, mainName }: { stories: OrthoDay['stories']; mainName?: string }) {
+  const main = mainName ? plain(mainName) : '';
+  const same = (title: string) => {
+    const x = plain(title);
+    return !!main && !!x && (x === main || x.includes(main) || main.includes(x));
+  };
   return (
     <View style={{ marginTop: 4 }}>
-      {stories.map((s, i) => <Story key={s.title} title={s.title} text={s.text} last={i === stories.length - 1} />)}
+      {stories.map((s, i) => <Story key={s.title} title={s.title} text={s.text} last={i === stories.length - 1} hideTitle={same(s.title)} />)}
     </View>
   );
 }
