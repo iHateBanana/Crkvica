@@ -3,7 +3,7 @@ import { AppState, Platform, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useT } from './i18n';
 import { offline, syncNow } from './supabase';
-import { colors } from './ui';
+import { colors, webTopInset } from './ui';
 
 const isWeb = Platform.OS === 'web' && typeof window !== 'undefined';
 
@@ -44,7 +44,7 @@ export function SyncBanner() {
     ? (online ? t('Syncing {n} saved change(s)...') : t('Offline. {n} change(s) will sync when you are back online.')).replace('{n}', String(pending))
     : t('You are offline. Saved days and your data are still available.');
   return (
-    <SafeAreaView edges={['top']} style={{ backgroundColor: colors.card, borderBottomColor: colors.border, borderBottomWidth: 1 }}>
+    <SafeAreaView edges={Platform.OS === 'web' ? [] : ['top']} style={{ backgroundColor: colors.card, borderBottomColor: colors.border, borderBottomWidth: 1, paddingTop: webTopInset }}>
       <Text style={{ color: colors.muted, fontSize: 12, textAlign: 'center', paddingVertical: 6, paddingHorizontal: 12 }}>{text}</Text>
     </SafeAreaView>
   );

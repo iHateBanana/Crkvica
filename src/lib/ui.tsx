@@ -97,14 +97,18 @@ export function Spinner({ size = 64, label }: { size?: number; label?: string })
   );
 }
 
+// On the web (installed PWA) the notch / Dynamic Island inset comes straight from the browser's CSS env(), which is
+// more reliable than the native-style hook. The extra 12px keeps content clear of the island.
+export const webTopInset: any = Platform.OS === 'web' ? 'calc(env(safe-area-inset-top, 0px) + 12px)' : 0;
+
 export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
   const inner = <View style={s.column}>{children}</View>;
   return (
-    <SafeAreaView style={s.screen} edges={['top']}>
+    <SafeAreaView style={s.screen} edges={Platform.OS === 'web' ? [] : ['top']}>
       <Lattice />
       {scroll ? (
-        <ScrollView contentContainerStyle={{ alignItems: 'center', paddingBottom: 40 }} keyboardShouldPersistTaps="handled">{inner}</ScrollView>
-      ) : inner}
+        <ScrollView contentContainerStyle={{ alignItems: 'center', paddingBottom: 40, paddingTop: webTopInset }} keyboardShouldPersistTaps="handled">{inner}</ScrollView>
+      ) : <View style={{ flex: 1, paddingTop: webTopInset }}>{inner}</View>}
     </SafeAreaView>
   );
 }
