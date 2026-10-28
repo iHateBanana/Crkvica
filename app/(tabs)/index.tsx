@@ -6,7 +6,7 @@ import { Pressable, Text, View } from 'react-native';
 import { CheckIn, CheckinRow } from '../../src/lib/CheckIn';
 import { quoteFor, readingFor, todosFor } from '../../src/lib/content';
 import { useAuth } from '../../src/lib/auth';
-import { Readings, SaintStories, SaintsList, SlavaCard } from '../../src/lib/DayParts';
+import { MainStory, Readings, SaintsList, SlavaCard } from '../../src/lib/DayParts';
 import { useT } from '../../src/lib/i18n';
 import { FastEditor, useFastOverrides } from '../../src/lib/FastEditor';
 import { useDayInfo } from '../../src/lib/orthocal';
@@ -88,43 +88,43 @@ export default function Today() {
   const hour = today.getHours();
   const greet = hour < 12 ? t('Good morning') : hour < 18 ? t('Good afternoon') : t('Good evening');
   const orbColor = red ? redLetter : fastColor[fast.level];
-  const hasStory = stories.length > 0 || !!headline?.story;
+  const hasStory = !!headline?.story;
 
   return (
     <Screen>
       <Hero  colorsFrom={red ? colors.heroRed : fast.level === 'none' ? colors.heroFeast : colors.heroFast}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 2 }}>
-          <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+        <View style={{ gap: 3 }}>
+          <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, letterSpacing: 1.5, textTransform: 'uppercase' }}>
             {today.toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' })}
           </Text>
           {style === 'old' ? (
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, letterSpacing: 1.5, textTransform: 'uppercase' }}>
-              {`·  ${t('Julian')} ${liturgicalDate.toLocaleDateString(locale, { month: 'short', day: 'numeric' })}`}
+            <Text style={{ color: colors.gold, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', opacity: 0.9 }}>
+              {`${t('Julian')} ${liturgicalDate.toLocaleDateString(locale, { month: 'short', day: 'numeric' })}`}
             </Text>
           ) : null}
         </View>
         <Title size={30}>{greet}{profile?.display_name && !profile.display_name.includes('@') ? `, ${profile.display_name}` : ''}</Title>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 6 }}>
+        <View style={{ alignSelf: 'flex-start' }}>
+          {red ? <Pill color={redLetter}>{t('RED LETTER DAY')}</Pill> : <Pill color={fastColor[fast.level]}>{t(fast.label)}</Pill>}
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <Orb color={orbColor}>{red ? <MaterialCommunityIcons name="star-four-points" size={30} color={orbColor} /> : <Cross size={34} color={orbColor} />}</Orb>
-          <View style={{ flex: 1, gap: 6 }}>
-            {red ? <Pill color={redLetter}>{t('RED LETTER DAY')}</Pill> : <Pill color={fastColor[fast.level]}>{t(fast.label)}</Pill>}
-            <Text style={{ color: colors.text, fontSize: 19, fontFamily: serif, lineHeight: 25 }}>
-              {mainName ? (feasts.length ? t(mainName) : mainName) : t('An ordinary day. Every day is a gift from God.')}
-            </Text>
-          </View>
+          <Text style={{ flex: 1, color: colors.text, fontSize: 19, fontFamily: serif, lineHeight: 25 }}>
+            {mainName ? (feasts.length ? t(mainName) : mainName) : t('An ordinary day. Every day is a gift from God.')}
+          </Text>
         </View>
         {headline?.about ? <Body muted>{t(headline.about)}</Body> : null}
-        {stories.length ? <SaintStories stories={stories} mainName={mainName} /> : hasStory ? (
+        {headline?.story ? (
           <>
             {showStory ? <Text style={{ color: colors.text, fontFamily: serif, fontSize: 16.5, lineHeight: 26 }}>{headline?.story}</Text> : null}
             <Pressable onPress={() => setShowStory(!showStory)}>
               <Text style={{ color: colors.gold, fontWeight: '700', letterSpacing: 0.5 }}>{showStory ? t('Show less') + ' ▲' : t('Read the story') + ' ▼'}</Text>
             </Pressable>
           </>
-        ) : orthoLoading ? <Body muted small>{t('Loading…')}</Body> : null}
+        ) : <MainStory stories={stories} mainName={mainName} />}
       </Hero>
 
-      <SaintsList saints={remainingCommemorations(ortho?.saints ?? [], mainName ? [mainName] : [])} />
+      <SaintsList saints={remainingCommemorations(ortho?.saints ?? [], mainName ? [mainName] : [])} stories={stories} mainName={mainName} />
 
       <Readings day={ortho} loading={orthoLoading} />
 

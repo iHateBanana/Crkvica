@@ -2,30 +2,51 @@ import { useState } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 import { OrthoDay, OrthoReading } from './orthocal';
+import { localSaintStory } from './orthodox';
+import { fetchSaintSummary } from './wiki';
 import { celebratesName, daysUntilSlava, slavaById, slavaLabel, slavaOn } from './slava';
 import { toLatin, useT } from './i18n';
-import { Body, Card, colors, Cross, Label, serif, Spinner } from './ui';
+import { Body, Card, colors, Cross, ga, Label, serif, Spinner } from './ui';
 
-function Story({ title, text, last, hideTitle }: { title: string; text: string; last?: boolean; hideTitle?: boolean }) {
+function Story({ title, lookup, text, last, hero }: { title?: string; lookup?: string; text?: string; last?: boolean; hero?: boolean }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
+  const [body, setBody] = useState<string | null | undefined>(text);
+  const [busy, setBusy] = useState(false);
+  const toggle = async () => {
+    const next = !open;
+    setOpen(next);
+    const name = lookup ?? title;
+    if (next && body === undefined && name) {
+      setBusy(true);
+      setBody(await fetchSaintSummary(name));
+      setBusy(false);
+    }
+  };
   return (
-    <View style={{ paddingVertical: 12, gap: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: 'rgba(227,185,92,0.18)' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: hideTitle ? 'flex-end' : 'flex-start' }}>
-        {hideTitle ? null : <Cross size={16} color={colors.gold} />}
-        {hideTitle ? null : <Text style={{ flex: 1, color: colors.text, fontFamily: serif, fontSize: 16.5, lineHeight: 22 }}>{title}</Text>}
+    <View style={{ paddingVertical: hero ? 0 : 10, gap: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: ga(0.18) }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {title ? <Cross size={16} color={colors.gold} /> : null}
+        {title ? <Text style={{ flex: 1, color: colors.text, fontSize: 15.5, lineHeight: 22 }}>{title}</Text> : <View style={{ flex: 1 }} />}
         <Pressable
-          onPress={() => setOpen(!open)}
+          onPress={toggle}
           hitSlop={6}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 2, paddingLeft: 10, paddingRight: 6, paddingVertical: 5, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(227,185,92,0.55)', backgroundColor: open ? 'rgba(227,185,92,0.16)' : 'transparent' }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, backgroundColor: open ? colors.gold : ga(0.18) }}
         >
-          <Text style={{ color: colors.gold, fontWeight: '700', fontSize: 12 }}>{open ? t('Show less') : t('Read the story')}</Text>
-          <MaterialCommunityIcons name={open ? 'chevron-up' : 'chevron-down'} size={16} color={colors.gold} />
+          <MaterialCommunityIcons name="book-open-page-variant-outline" size={15} color={open ? colors.bg : colors.gold} />
+          <Text style={{ color: open ? colors.bg : colors.gold, fontWeight: '700', fontSize: 12, letterSpacing: 0.3 }}>{open ? t('Show less') : t('Read the story')}</Text>
         </Pressable>
       </View>
       {open ? (
-        <View style={{ borderLeftWidth: 2, borderLeftColor: 'rgba(227,185,92,0.4)', paddingLeft: 12 }}>
-          <Text style={{ color: colors.text, opacity: 0.9, fontFamily: serif, fontSize: 16, lineHeight: 26 }}>{text}</Text>
+        <View style={{ borderLeftWidth: 2, borderLeftColor: ga(0.4), paddingLeft: 12, gap: 6 }}>
+          {busy ? <Spinner size={28} /> : (
+            <>
+              <Text style={{ color: colors.text, opacity: 0.9, fontFamily: serif, fontSize: 16, lineHeight: 26 }}>
+                {body ?? t('No written life of this saint is available yet.')}
+              </Text>
+              {body && text === undefined ? <Text style={{ color: colors.muted, fontSize: 12 }}>{t('Summary from Wikipedia')}</Text> : null}
+            </>
+          )}
         </View>
       ) : null}
     </View>
@@ -33,17 +54,27 @@ function Story({ title, text, last, hideTitle }: { title: string; text: string; 
 }
 
 const plain = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const sameName = (a: string, b: string) => {
+  const x = plain(a);
+  const y = plain(b);
+  return !!x && !!y && (x === y || x.includes(y) || y.includes(x));
+};
 
-// `mainName` is the feast already shown as the page headline, so its story row doesn't repeat the title.
-export function SaintStories({ stories, mainName }: { stories: OrthoDay['stories']; mainName?: string }) {
-  const main = mainName ? plain(mainName) : '';
-  const same = (title: string) => {
-    const x = plain(title);
-    return !!main && !!x && (x === main || x.includes(main) || main.includes(x));
-  };
+// The story for the day's headline saint: Orthocal's if it has one, otherwise our own (else looked up on demand).
+export function mainSaintStory(stories: OrthoDay['stories'], mainName?: string): string | undefined {
+  if (!mainName) return undefined;
+  return stories.find((s) => sameName(s.title, mainName))?.text ?? localSaintStory(mainName);
+}
+
+// The headline saint's story button, right-aligned under the name in the hero.
+export function MainStory({ stories, mainName }: { stories: OrthoDay['stories']; mainName?: string }) {
+  if (!mainName) return null;
+  const text = mainSaintStory(stories, mainName);
   return (
-    <View style={{ marginTop: 4 }}>
-      {stories.map((s, i) => <Story key={s.title} title={s.title} text={s.text} last={i === stories.length - 1} hideTitle={same(s.title)} />)}
+    <View style={{ alignItems: 'flex-end', marginTop: -26 }}>
+      <View style={{ alignSelf: 'stretch' }}>
+        <Story key={mainName} lookup={mainName} text={text} last hero />
+      </View>
     </View>
   );
 }
@@ -83,18 +114,24 @@ export function Readings({ day, loading }: { day: OrthoDay | null; loading: bool
   );
 }
 
-export function SaintsList({ saints }: { saints: string[] }) {
+export function SaintsList({ saints, stories = [], mainName }: { saints: string[]; stories?: OrthoDay['stories']; mainName?: string }) {
   const { t } = useT();
-  if (!saints.length) return null;
+  // Every other saint of the day, each with its story button where we have one.
+  const rest = stories.filter((s) => !mainName || !sameName(s.title, mainName));
+  const used = new Set<string>();
+  const rows: { title: string; text?: string }[] = saints.map((s) => {
+    const m = rest.find((x) => sameName(x.title, s));
+    if (m) used.add(m.title);
+    return { title: s, text: m?.text ?? localSaintStory(s) };
+  });
+  rest.filter((x) => !used.has(x.title)).forEach((x) => rows.push({ title: x.title, text: x.text }));
+  if (!rows.length) return null;
   return (
     <>
       <Label>{t('Saints & commemorations')}</Label>
       <Card>
-        {saints.map((s) => (
-          <View key={s} style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
-            <View style={{ marginTop: 3 }}><Cross size={18} color={colors.gold} /></View>
-            <Text style={{ flex: 1, color: colors.text, fontSize: 15.5, lineHeight: 22 }}>{s}</Text>
-          </View>
+        {rows.map((r, i) => (
+          <Story key={r.title} title={r.title} text={r.text} last={i === rows.length - 1} />
         ))}
       </Card>
     </>

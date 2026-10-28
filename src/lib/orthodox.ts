@@ -34,6 +34,27 @@ export function pascha(year: number): Date {
 // On the Old (Julian) calendar fixed feasts fall on the same Julian date number, 13 days later in civil time.
 export const liturgicalDate = (d: Date, style: CalendarStyle) => (style === 'old' ? julianOf(d) : d);
 
+// Short accounts for commemorations that come from Orthocal without a story of their own (matched on the name).
+const SAINT_STORIES: { match: string; text: string }[] = [
+  {
+    match: 'terence',
+    text: 'Terence and Neonila were a Christian husband and wife who raised their children in the faith during the Roman persecutions of the third century. When the family was ordered to offer sacrifice to the idols, they refused, and they strengthened one another and their children to remain faithful. They were tortured and put to death for Christ, together. The Church remembers them as a model of a household that confessed the faith as one.',
+  },
+  {
+    match: 'pochaev',
+    text: 'Job of Pochaev (c. 1551-1651), born Ivan Zalizo, came from a devout family near Kolomyia in Galicia, then under the Polish crown. Raised on the lives of the saints and The Ladder of St John Climacus, he left home at about ten to enter the Ugornitsky monastery, and was tonsured at twelve, taking the name Job after the patient sufferer of Scripture. He lived in strict obedience, fasting and prayer, and was later ordained a priest and made abbot.\n\nThese were hard years for the Orthodox in the Polish lands, with pressure to join the Union of Brest. Job left the Ugornitsky monastery and, after time at Dubno, came to the Pochaev monastery, where he served as abbot for decades. He kept the community firm in the Orthodox faith, set up a printing press that published Orthodox books, and defended the monastery against attempts to take it over. In his later years he withdrew to a cave near the monastery for silence, though people still came to him for counsel.\n\nHe reposed on October 28, 1651, at about a hundred years old. His relics were found incorrupt and are kept in the Dormition Lavra of Pochaev, where he is venerated as a defender of Orthodoxy and a wonderworker. He was glorified in 1659, only a few years after his death.',
+  },
+  {
+    match: 'arsenius of serbia',
+    text: 'Arsenius was a disciple and close companion of St Sava, the first Archbishop of Serbia. When Sava resigned the archbishop\'s throne, Arsenius was chosen to follow him in 1233, and for about thirty years he led the young Serbian Church. He kept up Sava\'s work: organising the dioceses, building up monastic life and holding the Church together through uneasy times for the country. He is remembered for his humility, his care for the poor and his steady, quiet governance. The Serbian Church keeps his memory on October 28.',
+  },
+];
+
+export function localSaintStory(name?: string): string | undefined {
+  const n = (name ?? '').toLowerCase();
+  return n ? SAINT_STORIES.find((s) => n.includes(s.match))?.text : undefined;
+}
+
 const STORY: Record<string, string> = {
   'Circumcision of the Lord / St. Basil the Great': 'Eight days after His birth, Christ was circumcised and given the name Jesus. The same day the Church honors St. Basil the Great (c. 330-379), Archbishop of Caesarea in Cappadocia. Born to a family of saints, he studied in Athens, gave away his wealth and became a monk. As bishop he built a vast complex for the poor and sick, defended the Nicene faith against the Arians, and wrote the Divine Liturgy that bears his name and is served on this day.',
   'Three Hierarchs': 'Basil the Great, Gregory the Theologian and John Chrysostom lived in the fourth century and were each gifted in learning and prayer. In the eleventh century, people at Constantinople quarrelled over which was greatest. The three appeared to Bishop John of Euchaita in a dream and said they were one in God. The Church then set a single feast for them on January 30 and made them patrons of education.',

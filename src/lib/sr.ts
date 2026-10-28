@@ -72,6 +72,8 @@ export const SR: Record<string, string> = {
   Fasting: 'Пост',
   'Read the story': 'Прочитај житије',
   'Show less': 'Прикажи мање',
+  'Summary from Wikipedia': 'Сажетак са Википедије',
+  'No written life of this saint is available yet.': 'Житије овог светитеља још није доступно.',
   Read: 'Читај',
   'Read {ref}': 'Читај {ref}',
   'Epistle & Gospel': 'Апостол и Јеванђеље',
