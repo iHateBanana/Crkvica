@@ -113,8 +113,9 @@ export function Screen({ children, scroll = true }: { children: ReactNode; scrol
       <Lattice />
       <SideMeander side="left" />
       <SideMeander side="right" />
+      <Meander style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }} />
       {scroll ? (
-        <ScrollView contentContainerStyle={{ alignItems: 'center', paddingBottom: 40, paddingTop: webTopInset }} keyboardShouldPersistTaps="handled">{inner}</ScrollView>
+        <ScrollView contentContainerStyle={{ alignItems: 'center', paddingBottom: 58, paddingTop: webTopInset }} keyboardShouldPersistTaps="handled">{inner}</ScrollView>
       ) : <View style={{ flex: 1, paddingTop: webTopInset }}>{inner}</View>}
     </SafeAreaView>
   );
@@ -194,7 +195,7 @@ function SideMeander({ side }: { side: 'left' | 'right' }) {
     <View
       pointerEvents="none"
       onLayout={(e) => setH(e.nativeEvent.layout.height)}
-      style={{ position: 'absolute', top: 0, bottom: 0, [side]: 0, width: 18, opacity: 0.75 }}
+      style={{ position: 'absolute', top: 0, bottom: 18, [side]: 0, width: 18, opacity: 0.75 }}
     >
       {h ? (
         <Svg width={18} height={h}>
