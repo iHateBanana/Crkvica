@@ -94,10 +94,16 @@ export default function Today() {
     <Screen>
       <Meander />
       <Hero  colorsFrom={red ? colors.heroRed : fast.level === 'none' ? colors.heroFeast : colors.heroFast}>
-        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, letterSpacing: 1.5, textTransform: 'uppercase' }}>
-          {today.toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' })}
-          {style === 'old' ? `  ·  ${t('Julian')} ${liturgicalDate.toLocaleDateString(locale, { month: 'short', day: 'numeric' })}` : ''}
-        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 2 }}>
+          <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+            {today.toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' })}
+          </Text>
+          {style === 'old' ? (
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+              {`·  ${t('Julian')} ${liturgicalDate.toLocaleDateString(locale, { month: 'short', day: 'numeric' })}`}
+            </Text>
+          ) : null}
+        </View>
         <Title size={30}>{greet}{profile?.display_name && !profile.display_name.includes('@') ? `, ${profile.display_name}` : ''}</Title>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 6 }}>
           <Orb color={orbColor}>{red ? <MaterialCommunityIcons name="star-four-points" size={30} color={orbColor} /> : <Cross size={34} color={orbColor} />}</Orb>
