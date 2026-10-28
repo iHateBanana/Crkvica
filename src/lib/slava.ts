@@ -48,21 +48,53 @@ const SLAVA_DATA: Slava[] = [
   { id: 'stefan', en: 'St. Stephen (Stefanovdan)', sr: 'Свети архиђакон Стефан (Стефановдан)', julian: [12, 27], names: ['Стефан', 'Стеван', 'Стево', 'Стефанија'] },
 ];
 
-// Julian date of a civil (Gregorian) date, valid 1900-2099.
-export const julianOf = (d: Date) => addDays(d, -13);
+export const SLAVAS: Slava[] = [...SLAVA_DATA].sort((a, b) => a.julian[0] - b.julian[0] || a.julian[1] - b.julian[1]);
+
+// Ids saved in users' profiles before they were renamed. Resolve on read; no database migration needed.
+export const LEGACY_IDS: Record<string, string> = { 'aranđelovdan': 'arandjelovdan' };
+
+export const slavaById = (id: string | null | undefined): Slava | undefined => {
+  if (!id) return undefined;
+  const real = LEGACY_IDS[id] ?? id;
+  return SLAVAS.find((s) => s.id === real);
+};
 
 export function slavaOn(d: Date): Slava | undefined {
   const j = julianOf(d);
   return SLAVAS.find((s) => s.julian[0] === j.getMonth() + 1 && s.julian[1] === j.getDate());
 }
 
-// Days until the next occurrence of a slava (0 if today).
-export function daysUntilSlava(s: Slava, from: Date): number {
-  for (let y = from.getFullYear(); y <= from.getFullYear() + 1; y++) {
-    // Julian date -> civil date: add 13 days.
-    const civil = addDays(makeDate(y, s.julian[0], s.julian[1]), 13);
-    const diff = dayDiff(civil, from);
-    if (diff >= 0) return diff;
+// Days until the next occurrence of a slava (0 if today), or null if none is found.
+// The Julian year before `from` is checked too: Stefanovdan (Julian Dec 27) falls on Jan 9 of the next civil year.
+export function daysUntilSlava(s: Slava, from: Date): number | null {
+  let best: number | null = null;
+  for (let y = from.getFullYear() - 1; y <= from.getFullYear() + 1; y++) {
+    const diff = dayDiff(julianToCivil(y, s.julian[0], s.julian[1]), from);
+    if (diff >= 0 && (best === null || diff < best)) best = diff;
   }
-  return 0;
+  return best;
 }
+
+export function slavaLabel(s: Slava, lang: SlavaLang): string {
+  return lang === 'en' ? s.en : lang === 'sr' ? s.sr : toLatin(s.sr);
+}
+
+// "Dec 6 Julian / Dec 19": the slava on both calendars.
+export function slavaDates(s: Slava, locale: string, julianWord: string, year = new Date().getFullYear()): string {
+  const fmt = (d: Date) => d.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+  return `${fmt(makeDate(year, s.julian[0], s.julian[1]))} ${julianWord} / ${fmt(julianToCivil(year, s.julian[0], s.julian[1]))}`;
+}
+
+// Matches English, Cyrillic and Latin names, with or without diacritics.
+export function searchSlavas(query: string): Slava[] {
+  const q = normalizeName(query);
+  if (!q) return SLAVAS;
+  return SLAVAS.filter((s) => [s.en, s.sr, ...s.names].some((x) => normalizeName(x).includes(q)));
+}
+
+// True if the (Latin or Cyrillic) typed name is celebrated on this slava.
+export const celebratesName = (s: Slava, typed: string | null | undefined): boolean => {
+  const n = normalizeName(typed ?? '');
+  return !!n && s.names.some((x) => normalizeName(x) === n);
+};
+
