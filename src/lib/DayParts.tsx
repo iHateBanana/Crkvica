@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { OrthoDay, OrthoReading } from './orthocal';
 import { celebratesName, daysUntilSlava, slavaById, slavaLabel, slavaOn } from './slava';
 import { toLatin, useT } from './i18n';
-import { Body, Card, colors, Cross, Label, serif } from './ui';
+import { Body, Card, colors, Cross, Label, serif, Spinner } from './ui';
 
 function Story({ title, text, last }: { title: string; text: string; last?: boolean }) {
   const { t } = useT();
@@ -64,8 +64,10 @@ export function Readings({ day, loading }: { day: OrthoDay | null; loading: bool
     <>
       <Label>{t('Epistle & Gospel')}</Label>
       <Card tone="gold">
-        {items.length ? items.map((r, i) => <Reading key={r.source + r.display + i} r={r} />) : (
-          <Body muted>{loading ? t('Loading…') : t('Readings are unavailable offline.')}</Body>
+        {items.length ? items.map((r, i) => <Reading key={r.source + r.display + i} r={r} />) : loading ? (
+          <View style={{ alignItems: 'center', paddingVertical: 10 }}><Spinner size={26} label={t('Loading…')} /></View>
+        ) : (
+          <Body muted>{t('Readings are unavailable offline.')}</Body>
         )}
         {items.length && lang !== 'en' ? <Body muted small>{t('Readings are shown in English (KJV).')}</Body> : null}
       </Card>

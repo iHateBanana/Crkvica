@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ReactNode } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
+import { ReactNode, useEffect, useRef } from 'react';
+import { Animated, Easing, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, G, Line, Path, Pattern, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg';
 
@@ -52,6 +52,50 @@ export function applyTheme(name: ThemeName) {
   s = makeStyles();
 }
 export const redLetter = '#ff4d4d';
+
+// Loading indicator: a cross glowing like a vigil lamp, ringed by eight small lights that kindle in turn.
+export function Spinner({ size = 64, label }: { size?: number; label?: string }) {
+  const pulse = useRef(new Animated.Value(0)).current;
+  const turn = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const native = Platform.OS !== 'web';
+    const a = Animated.loop(Animated.sequence([
+      Animated.timing(pulse, { toValue: 1, duration: 1100, easing: Easing.inOut(Easing.sin), useNativeDriver: native }),
+      Animated.timing(pulse, { toValue: 0, duration: 1100, easing: Easing.inOut(Easing.sin), useNativeDriver: native }),
+    ]));
+    const b = Animated.loop(Animated.timing(turn, { toValue: 1, duration: 2400, easing: Easing.linear, useNativeDriver: native }));
+    a.start(); b.start();
+    return () => { a.stop(); b.stop(); };
+  }, [pulse, turn]);
+  const ring = size * 1.7;
+  const dot = Math.max(4, size / 9);
+  return (
+    <View style={{ alignItems: 'center', gap: 14 }} accessibilityRole="progressbar" accessibilityLabel={label ?? 'Loading'}>
+      <View style={{ width: ring, height: ring, alignItems: 'center', justifyContent: 'center' }}>
+        <Animated.View style={{ position: 'absolute', width: ring, height: ring, transform: [{ rotate: turn.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }}>
+          {Array.from({ length: 8 }, (_, i) => {
+            const ang = (i / 8) * Math.PI * 2;
+            return (
+              <View
+                key={i}
+                style={{
+                  position: 'absolute', width: dot, height: dot, borderRadius: dot,
+                  left: ring / 2 + Math.sin(ang) * (ring / 2 - dot) - dot / 2,
+                  top: ring / 2 - Math.cos(ang) * (ring / 2 - dot) - dot / 2,
+                  backgroundColor: colors.gold, opacity: 0.25 + 0.75 * (i / 7),
+                }}
+              />
+            );
+          })}
+        </Animated.View>
+        <Animated.View style={{ opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }), transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1.06] }) }] }}>
+          <Cross size={size} />
+        </Animated.View>
+      </View>
+      {label ? <Text style={{ color: colors.muted, fontSize: 13, letterSpacing: 0.5 }}>{label}</Text> : null}
+    </View>
+  );
+}
 
 export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
   const inner = <View style={s.column}>{children}</View>;

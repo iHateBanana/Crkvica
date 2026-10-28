@@ -14,14 +14,31 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" href="/favicon.ico" />
     <style id="expo-reset">
-      html, body { height: 100%; background-color: #2a0a10; }
+      html, body { height: 100%; background-color: #2b0a10; color-scheme: dark; }
       body { overflow: hidden; }
       #root { display: flex; height: 100%; flex: 1; }
+      #boot { flex: 1; display: flex; align-items: center; justify-content: center; background: #2b0a10; }
+      html.blue, html.blue body, html.blue #boot { background-color: #0a1530; }
+      #boot svg { width: 64px; height: 64px; fill: #e2b552; animation: boot-pulse 2.2s ease-in-out infinite; }
+      html.blue #boot svg { fill: #c9d4e6; }
+      @keyframes boot-pulse { 0%, 100% { opacity: .55; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.06); } }
+      @media (prefers-reduced-motion: reduce) { #boot svg { animation: none; } }
     </style>
+    <script>
+      try { if (localStorage.getItem('theme') === 'blue') document.documentElement.className = 'blue'; } catch (e) {}
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot">
+        <svg viewBox="0 0 100 100" aria-label="Loading">
+          <rect x="46.5" y="10" width="7" height="82" rx="1.5" /><rect x="37" y="17" width="26" height="5.5" rx="1.5" />
+          <rect x="26" y="33" width="48" height="6.5" rx="1.5" /><polygon points="38.56,69.63 63.29,77.66 61.44,83.37 36.71,75.34" />
+          <circle cx="50" cy="9.5" r="3.4" /><circle cx="26" cy="36.2" r="3.4" /><circle cx="74" cy="36.2" r="3.4" />
+        </svg>
+      </div>
+    </div>
     <script>
       if ('serviceWorker' in navigator && location.hostname !== 'localhost') {
         window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js'); });
