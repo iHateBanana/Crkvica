@@ -65,6 +65,8 @@ const RED_EXTRA = new Set([
   'St. Paraskeva (Petka)',
   'Holy Apostle Andrew the First-called',
   'St. Stephen the Protomartyr (Stefanovdan)',
+  'St. Basil of Ostrog (Vasilijevdan)',
+  'Holy Apostle and Evangelist Luke (Lučindan)',
 ]);
 
 const ABOUT: Record<string, string> = {
@@ -96,6 +98,8 @@ const ABOUT: Record<string, string> = {
   'St. Prince Lazar (Vidovdan)': 'Prince Lazar and the Serbian army fell at the Battle of Kosovo in 1389, choosing the heavenly kingdom over earthly. Vidovdan is kept on this day.',
   'Holy Prophet Elijah (Ilindan)': 'The Old Testament prophet taken up in a fiery chariot. In Serbian tradition he is the master of thunder, rain and harvest.',
   'St. Paraskeva (Petka)': 'Paraskeva of Epivates (11th century), a pious ascetic venerated among the Serbs as Sveta Petka, helper of the sick and of women.',
+  'St. Basil of Ostrog (Vasilijevdan)': 'Bishop of Zahumlje-Herzegovina (1610-1671) who founded the monastery of Ostrog in Montenegro. His relics there heal many pilgrims of every faith.',
+  'Holy Apostle and Evangelist Luke (Lučindan)': 'Physician and companion of St. Paul, author of the third Gospel and the Acts of the Apostles. Tradition says he painted the first icons of the Theotokos.',
   'Holy Apostle Andrew the First-called': 'The first disciple called by Christ, brother of Peter. Tradition says he preached around the Black Sea and was crucified at Patras.',
   'St. Stephen the Protomartyr (Stefanovdan)': 'The first deacon and first martyr of the Church, stoned in Jerusalem for confessing Christ. Also commemorates the Serbian royal saint Stefan.',
 };
@@ -109,6 +113,7 @@ const FIXED: Record<string, Feast> = {
   '02-02': { name: 'Meeting of the Lord', rank: 'great' },
   '03-25': { name: 'Annunciation of the Theotokos', rank: 'great' },
   '04-23': { name: 'Great Martyr George', rank: 'minor' },
+  '04-29': { name: 'St. Basil of Ostrog (Vasilijevdan)', rank: 'major' },
   '05-11': { name: 'Ss. Cyril and Methodius', rank: 'minor' },
   '05-21': { name: 'Equals-to-the-Apostles Constantine & Helen', rank: 'minor' },
   '06-15': { name: 'St. Prince Lazar (Vidovdan)', rank: 'major' },
@@ -123,6 +128,7 @@ const FIXED: Record<string, Feast> = {
   '09-14': { name: 'Exaltation of the Holy Cross', rank: 'great' },
   '10-01': { name: 'Protection of the Theotokos', rank: 'minor' },
   '10-14': { name: 'St. Paraskeva (Petka)', rank: 'major' },
+  '10-18': { name: 'Holy Apostle and Evangelist Luke (Lučindan)', rank: 'major' },
   '10-26': { name: 'Great Martyr Demetrios', rank: 'minor' },
   '11-08': { name: 'Synaxis of the Archangel Michael', rank: 'major' },
   '11-14': { name: 'Holy Apostle Philip', rank: 'minor' },
