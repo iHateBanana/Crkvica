@@ -31,7 +31,7 @@ function Story({ title, lookup, text, last, hero }: { title?: string; lookup?: s
         <Pressable
           onPress={toggle}
           hitSlop={6}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, backgroundColor: open ? colors.gold : ga(0.18) }}
+          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minWidth: 136, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, backgroundColor: open ? colors.gold : ga(0.18) }}
         >
           <MaterialCommunityIcons name="book-open-page-variant-outline" size={15} color={open ? colors.bg : colors.gold} />
           <Text style={{ color: open ? colors.bg : colors.gold, fontWeight: '700', fontSize: 12, letterSpacing: 0.3 }}>{open ? t('Show less') : t('Read the story')}</Text>
