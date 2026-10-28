@@ -1,9 +1,17 @@
 // Offline support: caches the app shell and static assets. API calls (Supabase, Orthocal) are never cached here.
 const VERSION = 'crkvica-v1';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'];
+// Filled in at build time by scripts/precache.js with every route bundle.
+const BUNDLES = [/*__PRECACHE__*/];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(VERSION).then(async (c) => {
+      await c.addAll(SHELL);
+      // Bundles are best effort: a failed one is simply fetched later.
+      await Promise.all(BUNDLES.map((u) => c.add(u).catch(() => undefined)));
+    }).then(() => self.skipWaiting()),
+  );
 });
 
 self.addEventListener('activate', (e) => {
