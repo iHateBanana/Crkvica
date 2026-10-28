@@ -102,7 +102,12 @@ export function Spinner({ size = 64, label }: { size?: number; label?: string })
 export const webTopInset: any = Platform.OS === 'web' ? 'calc(env(safe-area-inset-top, 0px) + 12px)' : 0;
 
 export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
-  const inner = <View style={s.column}>{children}</View>;
+  const inner = (
+    <>
+      <Meander style={{ width: '100%', marginTop: 12 }} />
+      <View style={[s.column, { paddingTop: 6 }]}>{children}</View>
+    </>
+  );
   return (
     <SafeAreaView style={s.screen} edges={Platform.OS === 'web' ? [] : ['top']}>
       <Lattice />
@@ -199,7 +204,6 @@ function Rays() {
 export function PageHeader({ title, subtitle, icon }: { title: string; subtitle?: string; icon?: React.ComponentProps<typeof MaterialCommunityIcons>['name'] }) {
   return (
     <View style={{ alignItems: 'center', gap: 6, marginTop: 0, marginBottom: 4 }}>
-      <Meander style={{ marginBottom: 8 }} />
       <Orb color={colors.gold} size={64}>
         {icon ? <MaterialCommunityIcons name={icon} size={28} color={colors.gold} /> : <Cross size={30} color={colors.gold} />}
       </Orb>

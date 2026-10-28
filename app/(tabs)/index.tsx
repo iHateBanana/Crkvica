@@ -92,7 +92,6 @@ export default function Today() {
 
   return (
     <Screen>
-      <Meander />
       <Hero  colorsFrom={red ? colors.heroRed : fast.level === 'none' ? colors.heroFeast : colors.heroFast}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 2 }}>
           <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, letterSpacing: 1.5, textTransform: 'uppercase' }}>
