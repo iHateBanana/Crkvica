@@ -151,7 +151,7 @@ export function Screen({ children, scroll = true }: { children: ReactNode; scrol
   const gap = small ? FRAME_GAP_SMALL : FRAME_GAP;
   // The frame is part of the page: it spans the full content height, so scrolling reveals more of it.
   const page = (
-    <View style={{ flexGrow: 1, alignItems: 'center', paddingTop: webTopInset, paddingBottom: gap + size + 90 }}>
+    <View style={{ flexGrow: 1, alignItems: 'center', paddingTop: webTopInset, paddingBottom: gap + size + 100 }}>
       <Frame size={size} gap={gap} />
       <View style={[s.column, { paddingTop: small ? 28 : 40, paddingBottom: 24, flexGrow: 1 }, small && { paddingHorizontal: gap + size + 8 }]}>{children}</View>
     </View>
