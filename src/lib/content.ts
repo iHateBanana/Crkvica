@@ -28,15 +28,15 @@ const NT: [string, number][] = [
   ['1 John', 5], ['2 John', 1], ['3 John', 1], ['Jude', 1], ['Revelation', 22],
 ];
 
-export function readingFor(d: Date): string {
+export function readingFor(d: Date, t: T = (k) => k): string {
   const start = new Date(d.getFullYear(), 0, 0);
   const doy = Math.floor((d.getTime() - start.getTime()) / 86400000);
   let i = (doy - 1) % 260;
   for (const [book, n] of NT) {
-    if (i < n) return `${book} ${i + 1}`;
+    if (i < n) return `${t(book)} ${i + 1}`;
     i -= n;
   }
-  return 'Matthew 1';
+  return `${t('Matthew')} 1`;
 }
 
 export const MOODS = ['Peaceful', 'Grateful', 'Joyful', 'Hopeful', 'Tired', 'Anxious', 'Distracted', 'Sorrowful', 'Tempted'];
@@ -46,8 +46,7 @@ export interface Todo { id: string; text: string; }
 
 export function todosFor(d: Date, feasts: Feast[], fast: Fast, t: T = (k, v) => translate('en', k, v)): Todo[] {
   const out: Todo[] = [
-    { id: 'morning', text: t('Say morning prayers') },
-    { id: 'read', text: t('Read {ref}', { ref: readingFor(d) }) },
+    { id: 'read', text: t('Read {ref}', { ref: readingFor(d, t) }) },
   ];
   const red = feasts.find((f) => f.red);
   if (red) out.push({ id: 'litu', text: t('Attend Divine Liturgy for {feast}', { feast: t(red.name) }) });
@@ -56,6 +55,5 @@ export function todosFor(d: Date, feasts: Feast[], fast: Fast, t: T = (k, v) => 
   if (d.getDay() === 3) out.push({ id: 'wed', text: t('Wednesday: remember the betrayal of Christ') });
   if (d.getDay() === 5) out.push({ id: 'fri', text: t('Friday: remember the Cross') });
   out.push({ id: 'alms', text: t('Do one act of kindness or almsgiving') });
-  out.push({ id: 'evening', text: t('Say evening prayers and examine your day') });
   return out;
 }

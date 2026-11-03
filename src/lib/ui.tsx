@@ -97,6 +97,15 @@ export function Spinner({ size = 64, label }: { size?: number; label?: string })
   );
 }
 
+// Centered loading wrapper: consistent size + optional label for inline content.
+export function Loading({ size = 28, label }: { size?: number; label?: string }) {
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+      <Spinner size={size} label={label} />
+    </View>
+  );
+}
+
 // On the web (installed PWA) the notch / Dynamic Island inset comes straight from the browser's CSS env(), which is
 // more reliable than the native-style hook. The extra 24px keeps content clear of the island.
 export const webTopInset: any = Platform.OS === 'web' ? 'calc(env(safe-area-inset-top, 0px) + 24px)' : 0;
@@ -142,7 +151,7 @@ export function Screen({ children, scroll = true }: { children: ReactNode; scrol
   const gap = small ? FRAME_GAP_SMALL : FRAME_GAP;
   // The frame is part of the page: it spans the full content height, so scrolling reveals more of it.
   const page = (
-    <View style={{ flexGrow: 1, alignItems: 'center', paddingTop: webTopInset, paddingBottom: gap + size }}>
+    <View style={{ flexGrow: 1, alignItems: 'center', paddingTop: webTopInset, paddingBottom: gap + size + 90 }}>
       <Frame size={size} gap={gap} />
       <View style={[s.column, { paddingTop: small ? 28 : 40, paddingBottom: 24, flexGrow: 1 }, small && { paddingHorizontal: gap + size + 8 }]}>{children}</View>
     </View>

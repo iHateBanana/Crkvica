@@ -37,26 +37,37 @@ export default function Today() {
   const stories = ortho?.stories ?? [];
   const mainName = red?.name ?? others[0]?.name ?? ortho?.saints[0];
 
-  const [streak, setStreak] = useState(0);
-  const [done, setDone] = useState<[number, number]>([0, 0]);
+  const [rules, setRules] = useState<{ id: string; title: string }[]>([]);
+  const [streakLogs, setStreakLogs] = useState<{ rule_id: string; day: string }[]>([]);
+  const streak = streakFrom(rules.map((r) => r.id), streakLogs, !!profile?.streak_requires_all);
+  const [doneIds, setDoneIds] = useState<string[]>([]);
   const [ticked, setTicked] = useState<string[]>([]);
   const [history, setHistory] = useState<Checkin[]>([]);
 
   useFocusEffect(useCallback(() => {
     (async () => {
-      const [{ data: rules }, { data: logs }, { data: cks }, raw] = await Promise.all([
-        supabase.from('prayer_rules').select('id'),
+      const [{ data: rs }, { data: logs }, { data: cks }, raw] = await Promise.all([
+        supabase.from('prayer_rules').select('id, title').order('sort').order('created_at'),
         supabase.from('prayer_logs').select('rule_id, day'),
         supabase.from('checkins').select('*').order('day', { ascending: false }).limit(90),
         AsyncStorage.getItem('todos-' + key),
       ]);
-      const ids = (rules ?? []).map((r) => r.id as string);
-      setStreak(streakFrom(ids, (logs ?? []) as { rule_id: string; day: string }[]));
-      setDone([(logs ?? []).filter((l) => l.day === key).length, ids.length]);
+      const list = (rs ?? []) as { id: string; title: string }[];
+      setRules(list);
+      setStreakLogs((logs ?? []) as { rule_id: string; day: string }[]);
+      setDoneIds((logs ?? []).filter((l) => l.day === key).map((l) => l.rule_id as string));
       setTicked(raw ? JSON.parse(raw) : []);
       setHistory((cks ?? []) as Checkin[]);
     })();
   }, [key]));
+
+  const togglePrayer = async (id: string) => {
+    const on = doneIds.includes(id);
+    setDoneIds(on ? doneIds.filter((x) => x !== id) : [...doneIds, id]);
+    setStreakLogs(on ? streakLogs.filter((l) => !(l.rule_id === id && l.day === key)) : [...streakLogs, { rule_id: id, day: key }]);
+    if (on) await supabase.from('prayer_logs').delete().eq('rule_id', id).eq('day', key);
+    else await supabase.from('prayer_logs').insert({ rule_id: id, user_id: uid, day: key });
+  };
 
   const tick = (id: string) => {
     const next = ticked.includes(id) ? ticked.filter((x) => x !== id) : [...ticked, id];
@@ -142,13 +153,14 @@ export default function Today() {
 
       <Label>{t("Today's to-do")}</Label>
       <Card>
+        {rules.map((r) => <Check key={r.id} done={doneIds.includes(r.id)} label={r.title} onPress={() => togglePrayer(r.id)} />)}
         {todos.map((x) => <Check key={x.id} done={ticked.includes(x.id)} label={x.text} onPress={() => tick(x.id)} />)}
-        <Body muted small>{t('Prayer rule')} {done[0]}/{done[1]}  ·  {t('{n}-day streak', { n: streak })}</Body>
+        <Body muted small>{rules.length ? `${t('Prayer rule')} ${doneIds.length}/${rules.length}  ·  ` : `${t('Add your prayers in the Prayer tab.')}  ·  `}{t('{n}-day streak', { n: streak })}</Body>
       </Card>
 
       <Label>{t('Read')}</Label>
       <Card>
-        <Text style={{ color: colors.gold, fontFamily: serif, fontSize: 20 }}>{readingFor(today)}</Text>
+        <Text style={{ color: colors.gold, fontFamily: serif, fontSize: 20 }}>{readingFor(today, t)}</Text>
         <Body muted small>{t("Today's Scripture · one chapter a day through the New Testament")}</Body>
       </Card>
       <Card>

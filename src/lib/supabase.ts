@@ -48,6 +48,7 @@ export interface Profile {
   cycle_tracking_enabled: boolean;
   language: 'en' | 'sr' | 'sr-Latn';
   show_slava: boolean;
+  streak_requires_all: boolean;
   slava: string | null;
   cycle_stage: CycleStage;
   cycle_length: number | null;

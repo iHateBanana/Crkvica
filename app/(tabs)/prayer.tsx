@@ -13,7 +13,7 @@ interface Rule { id: string; title: string; }
 interface Log { rule_id: string; day: string; }
 
 export default function Prayer() {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const { t } = useT();
   const uid = session!.user.id;
   const [rules, setRules] = useState<Rule[]>([]);
@@ -55,7 +55,7 @@ export default function Prayer() {
     load();
   }
 
-  const streak = streakFrom(rules.map((r) => r.id), logs);
+  const streak = streakFrom(rules.map((r) => r.id), logs, !!profile?.streak_requires_all);
 
   return (
     <Screen>

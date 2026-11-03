@@ -187,6 +187,16 @@ export default function Profile() {
       </Card>
 
       <Card>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <View style={{ flex: 1 }}>
+            <Body>{t('Strict prayer streak')}</Body>
+            <Body muted small>{t('Only count a day toward your streak when every tracked prayer is done. Off: one prayer is enough.')}</Body>
+          </View>
+          <Switch value={!!profile.streak_requires_all} onValueChange={(v) => updateProfile({ streak_requires_all: v })} />
+        </View>
+      </Card>
+
+      <Card>
         <Label>{t('Fasting rules')}</Label>
         <FastRulesEditor uid={session!.user.id} />
       </Card>
@@ -196,17 +206,9 @@ export default function Profile() {
         <Chips
           options={[{ value: 'male', label: t('Male') }, { value: 'female', label: t('Female') }, { value: 'unspecified', label: t('Prefer not to say') }]}
           value={profile.gender}
-          onChange={(v) => updateProfile(v === 'male' ? { gender: v, cycle_tracking_enabled: false } : { gender: v })}
+          onChange={(v) => updateProfile({ gender: v })}
         />
       </Card>
-      {profile.gender !== 'male' && (
-        <Card>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Body>{t('Enable period & family tracker')}</Body>
-            <Switch value={profile.cycle_tracking_enabled} onValueChange={(v) => updateProfile({ cycle_tracking_enabled: v })} />
-          </View>
-        </Card>
-      )}
       <Feedback />
       <Button variant="ghost" label={t('Sign out')} onPress={() => supabase.auth.signOut()} />
       <DeleteAccount />

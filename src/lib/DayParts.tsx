@@ -6,7 +6,7 @@ import { localSaintStory } from './orthodox';
 import { fetchSaintSummary } from './wiki';
 import { celebratesName, daysUntilSlava, slavaById, slavaLabel, slavaOn } from './slava';
 import { toLatin, useT } from './i18n';
-import { Body, Card, colors, Cross, ga, Label, serif, Spinner } from './ui';
+import { Body, Card, colors, Cross, ga, Label, Loading, serif } from './ui';
 
 function Story({ title, lookup, text, last, hero }: { title?: string; lookup?: string; text?: string; last?: boolean; hero?: boolean }) {
   const { t } = useT();
@@ -39,7 +39,7 @@ function Story({ title, lookup, text, last, hero }: { title?: string; lookup?: s
       </View>
       {open ? (
         <View style={{ borderLeftWidth: 2, borderLeftColor: ga(0.4), paddingLeft: 12, gap: 6 }}>
-          {busy ? <Spinner size={28} /> : (
+          {busy ? <Loading size={28} /> : (
             <>
               <Text style={{ color: colors.text, opacity: 0.9, fontFamily: serif, fontSize: 16, lineHeight: 26 }}>
                 {body ?? t('No written life of this saint is available yet.')}
@@ -104,7 +104,7 @@ export function Readings({ day, loading }: { day: OrthoDay | null; loading: bool
       <Label>{t('Epistle & Gospel')}</Label>
       <Card tone="gold">
         {items.length ? items.map((r, i) => <Reading key={r.source + r.display + i} r={r} />) : loading ? (
-          <View style={{ alignItems: 'center', paddingVertical: 10 }}><Spinner size={26} label={t('Loading…')} /></View>
+          <Loading size={26} label={t('Loading…')} />
         ) : (
           <Body muted>{t('Readings are unavailable offline.')}</Body>
         )}
