@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Session } from '@supabase/supabase-js';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import type { Lang } from './i18n';
-import { getStoredSession, Profile, supabase } from './supabase';
+import { getStoredSession, offline, Profile, supabase } from './supabase';
 
 interface Ctx {
   session: Session | null;
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     const { data } = supabase.auth.onAuthStateChange((e, s) => {
       if (s) setSession(s);
-      else if (e === 'SIGNED_OUT') { setSession(null); setProfile(null); setLoading(false); }
+      else if (e === 'SIGNED_OUT') { offline.clear().catch(() => undefined); setSession(null); setProfile(null); setLoading(false); }
     });
     return () => data.subscription.unsubscribe();
   }, []);
@@ -60,8 +60,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = useCallback(async (patch: Partial<Profile>) => {
     if (!userId) return;
-    setProfile((p) => (p ? { ...p, ...patch } : p));
-    await supabase.from('profiles').update(patch).eq('id', userId);
+    let previous: Profile | null = null;
+    setProfile((p) => { previous = p; return p ? { ...p, ...patch } : p; });
+    const { error } = await supabase.from('profiles').update(patch).eq('id', userId);
+    if (error) {
+      // Roll back only the fields this call changed.
+      setProfile((p) => {
+        if (!p || !previous) return p;
+        const undo: Partial<Profile> = {};
+        for (const k of Object.keys(patch) as (keyof Profile)[]) (undo as any)[k] = previous[k];
+        return { ...p, ...undo };
+      });
+    }
   }, [userId]);
 
   const setLang = useCallback(async (l: Lang) => {

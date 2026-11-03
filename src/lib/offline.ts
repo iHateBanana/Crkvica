@@ -29,6 +29,7 @@ interface Queued {
 type Row = Record<string, any>;
 
 const QUEUE_KEY = 'oq:queue';
+const FAILED_KEY = 'oq:failed';
 const CACHE = 'oc:';
 const PK: Record<string, string[]> = {
   prayer_logs: ['rule_id', 'day'],
@@ -139,6 +140,28 @@ export function createOffline({ storage, baseFetch, storedUser }: OfflineDeps) {
   const dequeue = (qid: string) => withQueue((q) => ({ q: q.filter((i) => i.qid !== qid), out: undefined }));
   const firstFor = (user: string) => withQueue((q) => ({ out: q.find((i) => i.user === user) ?? null }));
 
+  // Writes the server permanently rejected are kept here so the user can be told instead of losing them silently.
+  const recordFailed = async (item: Queued) => {
+    const raw = await storage.getItem(FAILED_KEY);
+    const list: Queued[] = raw ? JSON.parse(raw) : [];
+    await storage.setItem(FAILED_KEY, JSON.stringify([...list, item].slice(-50)));
+  };
+  const failedFor = async (user: string) => {
+    const raw = await storage.getItem(FAILED_KEY);
+    return (raw ? (JSON.parse(raw) as Queued[]) : []).filter((i) => i.user === user).length;
+  };
+  const dismissFailed = async () => { await storage.removeItem(FAILED_KEY); notify(); };
+
+  // Removes everything stored for offline use (cached reads, queued and failed writes), e.g. on sign-out.
+  const clear = async () => {
+    const keys = await storage.getAllKeys();
+    await Promise.all(keys.filter((k) => k.startsWith(CACHE)).map((k) => storage.removeItem(k)));
+    await withQueue(() => ({ q: [], out: undefined }));
+    await storage.removeItem(QUEUE_KEY);
+    await storage.removeItem(FAILED_KEY);
+    notify();
+  };
+
   let flushing: Promise<void> | null = null;
 
   // Replays queued writes for the signed-in user in order. Stops at the first network failure.
@@ -162,6 +185,7 @@ export function createOffline({ storage, baseFetch, storedUser }: OfflineDeps) {
             break;
           }
           const permanent = res.status >= 400 && res.status < 500 && ![401, 408, 429].includes(res.status);
+          if (permanent) await recordFailed(item);
           if (res.ok || permanent) await dequeue(item.qid);
           else break;
         }
@@ -214,6 +238,9 @@ export function createOffline({ storage, baseFetch, storedUser }: OfflineDeps) {
         if (res.ok) {
           const text = await res.clone().text();
           await Promise.resolve(storage.setItem(key, text)).catch(() => undefined);
+        } else if (res.status >= 500) {
+          const hit = await storage.getItem(key);
+          if (hit !== null) return new Response(hit, { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
         return res;
       } catch (e) {
@@ -269,6 +296,9 @@ export function createOffline({ storage, baseFetch, storedUser }: OfflineDeps) {
     fetch: offlineFetch as typeof fetch,
     flush,
     pending,
+    failedFor,
+    dismissFailed,
+    clear,
     subscribe: (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; },
   };
 }

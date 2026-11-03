@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { AppState, Platform, Text } from 'react-native';
+import { AppState, Platform, Pressable, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useT } from './i18n';
-import { offline, syncNow } from './supabase';
+import { getStoredSession, offline, syncNow } from './supabase';
 import { colors, webTopInset } from './ui';
 
 const isWeb = Platform.OS === 'web' && typeof window !== 'undefined';
@@ -11,10 +11,14 @@ const isWeb = Platform.OS === 'web' && typeof window !== 'undefined';
 export function SyncBanner() {
   const { t } = useT();
   const [pending, setPending] = useState(0);
+  const [failed, setFailed] = useState(0);
   const [online, setOnline] = useState(isWeb ? navigator.onLine : true);
 
   useEffect(() => {
-    const refresh = () => { offline.pending().then(setPending); };
+    const refresh = () => {
+      offline.pending().then(setPending);
+      getStoredSession().then((s) => (s ? offline.failedFor(s.user.id) : 0)).then(setFailed);
+    };
     refresh();
     const unsub = offline.subscribe(refresh);
     syncNow().catch(() => undefined);
@@ -39,13 +43,17 @@ export function SyncBanner() {
     };
   }, []);
 
-  if (online && pending === 0) return null;
-  const text = pending > 0
+  if (online && pending === 0 && failed === 0) return null;
+  const text = failed > 0
+    ? t('{n} change(s) could not be saved and were discarded. Tap to dismiss.').replace('{n}', String(failed))
+    : pending > 0
     ? (online ? t('Syncing {n} saved change(s)...') : t('Offline. {n} change(s) will sync when you are back online.')).replace('{n}', String(pending))
     : t('You are offline. Saved days and your data are still available.');
   return (
     <SafeAreaView edges={Platform.OS === 'web' ? [] : ['top']} style={{ backgroundColor: colors.card, borderBottomColor: colors.border, borderBottomWidth: 1, paddingTop: webTopInset }}>
-      <Text style={{ color: colors.muted, fontSize: 12, textAlign: 'center', paddingVertical: 6, paddingHorizontal: 12 }}>{text}</Text>
+      <Pressable disabled={failed === 0} onPress={() => { offline.dismissFailed(); }}>
+        <Text style={{ color: failed > 0 ? colors.text : colors.muted, fontSize: 12, textAlign: 'center', paddingVertical: 6, paddingHorizontal: 12 }}>{text}</Text>
+      </Pressable>
     </SafeAreaView>
   );
 }

@@ -1,5 +1,5 @@
 // Offline support: caches the app shell and static assets. API calls (Supabase, Orthocal) are never cached here.
-const VERSION = 'crkvica-v1';
+const VERSION = 'crkvica-v10';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'];
 // Filled in at build time by scripts/precache.js with every route bundle.
 const BUNDLES = [/*__PRECACHE__*/];
@@ -32,8 +32,10 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(VERSION).then((c) => c.put('/index.html', copy));
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(VERSION).then((c) => c.put('/index.html', copy));
+          }
           return res;
         })
         .catch(() => caches.match('/index.html').then((r) => r || caches.match('/'))),

@@ -13,7 +13,7 @@ import { useDayInfo } from '../../src/lib/orthocal';
 import { fromIso, getDayInfo, iso, remainingCommemorations, upcomingRedLetter } from '../../src/lib/orthodox';
 import { streakFrom } from '../../src/lib/streak';
 import { supabase } from '../../src/lib/supabase';
-import { Body, Card, Check, colors, Cross, fastColor, Hero, Label, Meander, Ornament, Orb, Pill, redLetter, Screen, serif, Title } from '../../src/lib/ui';
+import { Body, Card, Check, colors, Cross, fastColor, Hero, Label, Ornament, Orb, Pill, redLetter, Screen, serif, Title } from '../../src/lib/ui';
 
 type Checkin = CheckinRow;
 
@@ -99,7 +99,6 @@ export default function Today() {
   const hour = today.getHours();
   const greet = hour < 12 ? t('Good morning') : hour < 18 ? t('Good afternoon') : t('Good evening');
   const orbColor = red ? redLetter : fastColor[fast.level];
-  const hasStory = !!headline?.story;
 
   return (
     <Screen>

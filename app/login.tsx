@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../src/lib/auth';
 import { LANGS, useT } from '../src/lib/i18n';
 import { supabase } from '../src/lib/supabase';
-import { Body, Button, Chips, colors, Cross, Input, Ornament, Orb, Screen, Title } from '../src/lib/ui';
+import { Button, Chips, colors, Cross, Input, Ornament, Orb, Screen, Title } from '../src/lib/ui';
 
 export default function Login() {
   const { t } = useT();

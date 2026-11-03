@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fetchDay, orthocalUrl } from '../src/lib/orthocal';
+import { getDayInfo, iso, makeDate } from '../src/lib/orthodox';
 
+// vi.mock is hoisted above the imports by vitest.
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: { getItem: async () => null, setItem: async () => undefined },
 }));
-
-import { fetchDay, orthocalUrl } from '../src/lib/orthocal';
-import { getDayInfo, iso, makeDate } from '../src/lib/orthodox';
 
 // Recorded from orthocal.info: /julian/2026/10/27/ returns the Old Calendar day for CIVIL Oct 27, dated Julian Oct 14.
 const PARASKEVA = { year: 2026, month: 10, day: 14, summary_title: 'Ven. Parasceva of Serbia; Holy Martyrs Nazarius, Gervasius, Protasius, and Celsus of Milan (1st c.); Saint Cosmas the Hymnographer (8th c.)', feast_level: 2, readings: [], stories: [] };

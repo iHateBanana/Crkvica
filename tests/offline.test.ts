@@ -129,6 +129,24 @@ describe('offline writes', () => {
     t.env.status = 409;
     await t.off.flush(jwt('u1'));
     expect(await t.off.pending()).toBe(0);
+    expect(await t.off.failedFor('u1')).toBe(1);
+    await t.off.dismissFailed();
+    expect(await t.off.failedFor('u1')).toBe(0);
+  });
+
+  it('serves the cached list when the server errors with 5xx', async () => {
+    t.env.online = true;
+    t.env.status = 503;
+    const res = await t.off.fetch(listUrl, { headers: t.hdr(jwt('u1')) });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual([{ id: 'old', day: '2026-10-20', body: 'old', created_at: '2026-10-20T10:00:00Z' }]);
+  });
+
+  it('clear() removes cached reads and queued writes', async () => {
+    await insert({ user_id: 'u1', day: '2026-10-28', body: 'one' });
+    await t.off.clear();
+    expect(await t.off.pending()).toBe(0);
+    expect([...t.mem.keys()]).toEqual([]);
   });
 
   it('does not replay another user\'s writes', async () => {

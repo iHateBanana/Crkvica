@@ -227,6 +227,7 @@ export const SR: Record<string, string> = {
   'Feedback': 'Повратне информације',
   'Syncing {n} saved change(s)...': 'Синхронизација {n} сачуваних измена...',
   'Offline. {n} change(s) will sync when you are back online.': 'Нисте на мрежи. {n} измена ће се синхронизовати када се вратите на мрежу.',
+  '{n} change(s) could not be saved and were discarded. Tap to dismiss.': '{n} измена није могла бити сачувана и одбачена је. Додирните да затворите.',
   'You are offline. Saved days and your data are still available.': 'Нисте на мрежи. Сачувани дани и ваши подаци су и даље доступни.',
   'Tell us what you think or report a problem.': 'Реците нам шта мислите или пријавите проблем.',
   'Your feedback': 'Ваше мишљење',

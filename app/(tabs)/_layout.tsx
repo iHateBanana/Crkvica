@@ -6,7 +6,11 @@ import { useT } from '../../src/lib/i18n';
 import { colors, Cross } from '../../src/lib/ui';
 
 type Glyph = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
-const icon = (name: Glyph) => ({ color }: { color: unknown }) => <MaterialCommunityIcons name={name} size={24} color={color as string} />;
+const icon = (name: Glyph) => {
+  const TabIcon = ({ color }: { color: unknown }) => <MaterialCommunityIcons name={name} size={24} color={color as string} />;
+  TabIcon.displayName = `TabIcon(${name})`;
+  return TabIcon;
+};
 const crossIcon = ({ color }: { color: unknown }) => <Cross size={26} color={color as string} />;
 
 export default function TabsLayout() {
