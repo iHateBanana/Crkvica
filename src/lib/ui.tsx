@@ -156,12 +156,13 @@ export function Screen({ children, scroll = true }: { children: ReactNode; scrol
       <View style={[s.column, { paddingTop: small ? 28 : 40, paddingBottom: 24, flexGrow: 1 }, small && { paddingHorizontal: gap + size + 8 }]}>{children}</View>
     </View>
   );
+  const bottomGap: any = Platform.OS === 'web' ? 'var(--bottom-gap, 0px)' : 0;
   return (
     <SafeAreaView style={s.screen} edges={Platform.OS === 'web' ? [] : ['top']}>
       <Lattice />
       {scroll ? (
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">{page}</ScrollView>
-      ) : <View style={{ flex: 1 }}>{page}</View>}
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: bottomGap }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">{page}</ScrollView>
+      ) : <View style={{ flex: 1, paddingBottom: bottomGap }}>{page}</View>}
     </SafeAreaView>
   );
 }
