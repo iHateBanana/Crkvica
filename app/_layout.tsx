@@ -1,9 +1,12 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack } from 'expo-router';
 import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { View } from 'react-native';
 import { AuthProvider, useAuth } from '../src/lib/auth';
 import { useT } from '../src/lib/i18n';
+import { pruneStorage } from '../src/lib/prune';
 import { SyncBanner } from '../src/lib/sync';
 import { ThemeProvider, useTheme } from '../src/lib/theme';
 import { colors, Loading } from '../src/lib/ui';
@@ -33,6 +36,7 @@ function Routes() {
 }
 
 export default function RootLayout() {
+  useEffect(() => { pruneStorage(AsyncStorage).catch(() => undefined); }, []);
   return (
     <ThemeProvider>
       <AuthProvider>

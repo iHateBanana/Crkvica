@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Platform, Switch, View } from 'react-native';
 import { useAuth } from '../../src/lib/auth';
@@ -122,9 +122,15 @@ export default function Profile() {
   const [nm, setNm] = useState(profile?.display_name?.includes('@') ? '' : profile?.display_name ?? '');
   const [nmSaved, setNmSaved] = useState(false);
   const [slavaQ, setSlavaQ] = useState('');
+  const julian = t('Julian');
+  const showSlava = !!profile?.show_slava;
+  // Formats 62 localized dates, so don't redo it on every keystroke in the other fields.
+  const slavaOptions = useMemo(
+    () => (showSlava ? searchSlavas(slavaQ).map((s) => ({ value: s.id, label: `${slavaLabel(s, lang)}\n${slavaDates(s, locale, julian)}` })) : []),
+    [showSlava, slavaQ, lang, locale, julian],
+  );
   if (!profile) return null;
   const mySlava = slavaById(profile.slava);
-  const shownSlavas = searchSlavas(slavaQ);
   return (
     <Screen>
       <PageHeader title={t('Profile')} subtitle={session?.user.is_anonymous ? t('Guest') : session?.user.email ?? undefined} />
@@ -172,17 +178,14 @@ export default function Profile() {
           <>
             <Label>{t('My family slava')}</Label>
             <Input placeholder={t('Search slavas')} value={slavaQ} onChangeText={setSlavaQ} autoCorrect={false} autoCapitalize="none" />
-            {shownSlavas.length ? (
+            {slavaOptions.length ? (
               <Chips
-                options={[
-                  { value: '', label: t('None') },
-                  ...shownSlavas.map((s) => ({ value: s.id, label: `${slavaLabel(s, lang)}\n${slavaDates(s, locale, t('Julian'))}` })),
-                ]}
+                options={[{ value: '', label: t('None') }, ...slavaOptions]}
                 value={mySlava?.id ?? ''}
                 onChange={(v) => updateProfile({ slava: v || null })}
               />
             ) : <Body muted small>{t('No slava matches your search.')}</Body>}
-            {mySlava ? <Body muted small>{slavaLabel(mySlava, lang)} · {slavaDates(mySlava, locale, t('Julian'))}</Body> : null}          </>
+            {mySlava ? <Body muted small>{slavaLabel(mySlava, lang)} · {slavaDates(mySlava, locale, julian)}</Body> : null}          </>
         ) : null}
       </Card>
 

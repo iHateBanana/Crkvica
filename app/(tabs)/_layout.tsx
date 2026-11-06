@@ -1,13 +1,13 @@
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Icon, IconName } from '../../src/lib/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useT } from '../../src/lib/i18n';
 import { colors, Cross } from '../../src/lib/ui';
 
-type Glyph = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+type Glyph = IconName;
 const icon = (name: Glyph) => {
-  const TabIcon = ({ color }: { color: unknown }) => <MaterialCommunityIcons name={name} size={24} color={color as string} />;
+  const TabIcon = ({ color }: { color: unknown }) => <Icon name={name} size={24} color={color as string} />;
   TabIcon.displayName = `TabIcon(${name})`;
   return TabIcon;
 };
