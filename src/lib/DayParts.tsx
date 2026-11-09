@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Pressable, Text, View } from 'react-native';
+import { Icon } from './Icon';
+import { Image, Linking, Pressable, Text, View } from 'react-native';
 import { OrthoDay, OrthoReading } from './orthocal';
 import { localSaintStory } from './orthodox';
+import { SaintImage } from './saintImage';
 import { fetchSaintSummary } from './wiki';
 import { celebratesName, daysUntilSlava, slavaById, slavaLabel, slavaOn } from './slava';
 import { toLatin, useT } from './i18n';
@@ -33,7 +34,7 @@ function Story({ title, lookup, text, last, hero }: { title?: string; lookup?: s
           hitSlop={6}
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minWidth: 136, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, backgroundColor: open ? colors.gold : ga(0.18) }}
         >
-          <MaterialCommunityIcons name="book-open-page-variant-outline" size={15} color={open ? colors.bg : colors.gold} />
+          <Icon name="book-open-page-variant-outline" size={15} color={open ? colors.bg : colors.gold} />
           <Text style={{ color: open ? colors.bg : colors.gold, fontWeight: '700', fontSize: 12, letterSpacing: 0.3 }}>{open ? t('Show less') : t('Read the story')}</Text>
         </Pressable>
       </View>
@@ -67,14 +68,36 @@ export function mainSaintStory(stories: OrthoDay['stories'], mainName?: string):
 }
 
 // The headline saint's story button, right-aligned under the name in the hero.
-export function MainStory({ stories, mainName }: { stories: OrthoDay['stories']; mainName?: string }) {
+export function MainStory({ stories, mainName, tucked = true }: { stories: OrthoDay['stories']; mainName?: string; tucked?: boolean }) {
   if (!mainName) return null;
   const text = mainSaintStory(stories, mainName);
   return (
-    <View style={{ alignItems: 'flex-end', marginTop: -26 }}>
+    <View style={{ alignItems: 'flex-end', marginTop: tucked ? -26 : 0 }}>
       <View style={{ alignSelf: 'stretch' }}>
         <Story key={mainName} lookup={mainName} text={text} last hero />
       </View>
+    </View>
+  );
+}
+
+// The day's saint in an icon frame, credited to its source. Shows the fallback when there's no image or it can't load (offline).
+export function SaintFigure({ image, subject, mainName, fallback }: { image: SaintImage | null; subject?: string; mainName?: string; fallback: React.ReactNode }) {
+  const { t } = useT();
+  const [failed, setFailed] = useState<string | null>(null);
+  if (!image || failed === image.uri) return <>{fallback}</>;
+  return (
+    <View style={{ width: 104, gap: 4 }}>
+      <Image
+        source={{ uri: image.uri }}
+        accessibilityLabel={subject}
+        resizeMode="cover"
+        onError={() => setFailed(image.uri)}
+        style={{ width: 104, height: 132, borderRadius: 12, borderWidth: 2, borderColor: colors.gold, backgroundColor: ga(0.12) }}
+      />
+      {subject && subject !== mainName ? <Text numberOfLines={3} style={{ color: colors.text, fontSize: 11, lineHeight: 14, textAlign: 'center' }}>{subject}</Text> : null}
+      <Pressable onPress={() => Linking.openURL(image.source)} hitSlop={6} accessibilityRole="link">
+        <Text style={{ color: colors.muted, fontSize: 10, textAlign: 'center', textDecorationLine: 'underline' }}>{t('Image: Wikimedia')}</Text>
+      </Pressable>
     </View>
   );
 }

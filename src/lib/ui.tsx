@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { Icon, IconName } from './Icon';
+import { memo, ReactNode, useEffect, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, G, Line, Path, Pattern, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg';
@@ -55,8 +55,8 @@ export const redLetter = '#ff4d4d';
 
 // Loading indicator: a cross glowing like a vigil lamp, ringed by eight small lights that kindle in turn.
 export function Spinner({ size = 64, label }: { size?: number; label?: string }) {
-  const pulse = useRef(new Animated.Value(0)).current;
-  const turn = useRef(new Animated.Value(0)).current;
+  const [pulse] = useState(() => new Animated.Value(0));
+  const [turn] = useState(() => new Animated.Value(0));
   useEffect(() => {
     const native = Platform.OS !== 'web';
     const a = Animated.loop(Animated.sequence([
@@ -123,7 +123,9 @@ function Corner({ size = 18 }: { size?: number }) {
   );
 }
 
-function Frame({ size, gap }: { size: number; gap: number }) {
+// The decorative layers below are memoized so typing or ticking a box doesn't redraw their SVGs. A theme change still
+// repaints them because it remounts the whole Stack (key={theme} in app/_layout.tsx).
+const Frame = memo(function Frame({ size, gap }: { size: number; gap: number }) {
   const row = { flexDirection: 'row' as const, alignItems: 'center' as const };
   return (
     <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, paddingTop: webTopInset, paddingHorizontal: gap, paddingBottom: gap }}>
@@ -143,7 +145,7 @@ function Frame({ size, gap }: { size: number; gap: number }) {
       </View>
     </View>
   );
-}
+});
 
 export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
   const small = useWindowDimensions().width < SMALL_SCREEN;
@@ -168,7 +170,7 @@ export function Screen({ children, scroll = true }: { children: ReactNode; scrol
 }
 
 // A faint gold diamond lattice with a tiny cross in each cell, like woven church embroidery.
-function Lattice() {
+const Lattice = memo(function Lattice() {
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Svg width="100%" height="100%">
@@ -191,7 +193,7 @@ function Lattice() {
       </Svg>
     </View>
   );
-}
+});
 
 // Gold rule with diamonds and a small cross at the centre.
 export function Ornament({ size = 14, style }: { size?: number; style?: object }) {
@@ -262,7 +264,7 @@ function SideMeander({ side, style, size = 18 }: { side: 'left' | 'right'; style
 }
 
 // Rays of light fanning out from a corner, like the halo behind a saint.
-function Rays() {
+const Rays = memo(function Rays() {
   const lines = Array.from({ length: 13 }, (_, i) => {
     const a = (Math.PI / 2) * (1 + i / 12);
     return { x2: 260 + 340 * Math.cos(a), y2: 340 * Math.sin(a), strong: i % 3 === 0 };
@@ -276,14 +278,14 @@ function Rays() {
       </Svg>
     </View>
   );
-}
+});
 
 // Centered page header: haloed icon, serif title, ornamental rule.
-export function PageHeader({ title, subtitle, icon }: { title: string; subtitle?: string; icon?: React.ComponentProps<typeof MaterialCommunityIcons>['name'] }) {
+export function PageHeader({ title, subtitle, icon }: { title: string; subtitle?: string; icon?: IconName }) {
   return (
     <View style={{ alignItems: 'center', gap: 6, marginTop: 0, marginBottom: 4 }}>
       <Orb color={colors.gold} size={64}>
-        {icon ? <MaterialCommunityIcons name={icon} size={28} color={colors.gold} /> : <Cross size={30} color={colors.gold} />}
+        {icon ? <Icon name={icon} size={28} color={colors.gold} /> : <Cross size={30} color={colors.gold} />}
       </Orb>
       <Text style={{ color: colors.text, fontSize: 30, fontFamily: serif, fontWeight: '600', letterSpacing: 0.4, textAlign: 'center' }}>{title}</Text>
       {subtitle ? <Text style={{ color: colors.muted, fontSize: 14, textAlign: 'center', fontStyle: 'italic', fontFamily: serif }}>{subtitle}</Text> : null}
@@ -309,7 +311,7 @@ export const Label = ({ children, raised = false }: { children: ReactNode; raise
 );
 
 // Gold bracket corners, like the frame of an icon.
-function Corners({ strong }: { strong?: boolean }) {
+const Corners = memo(function Corners({ strong }: { strong?: boolean }) {
   const c = { position: 'absolute', width: 14, height: 14, borderColor: colors.gold, opacity: strong ? 0.95 : 0.5 } as const;
   return (
     <>
@@ -322,10 +324,10 @@ function Corners({ strong }: { strong?: boolean }) {
       ))}
     </>
   );
-}
+});
 
 // A glint of light along the top edge: a line that fades out at both ends, with a small four-point sparkle.
-function Glint({ strong }: { strong?: boolean }) {
+const Glint = memo(function Glint({ strong }: { strong?: boolean }) {
   return (
     <>
       <LinearGradient pointerEvents="none" colors={['transparent', ga(strong ? 0.9 : 0.5), 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ position: 'absolute', top: 0, left: 14, right: 14, height: 1.5 }} />
@@ -336,7 +338,7 @@ function Glint({ strong }: { strong?: boolean }) {
       </View>
     </>
   );
-}
+});
 
 export const Card = ({ children, tone, compactTop = false }: { children: ReactNode; tone?: 'red' | 'gold'; compactTop?: boolean }) => (
   <View style={[s.card, compactTop && { paddingTop: 8 }, tone === 'red' && { borderColor: colors.gold, borderWidth: 1.5, backgroundColor: colors.deep }, tone === 'gold' && { borderColor: ga(0.6) }]}>
@@ -391,7 +393,7 @@ export function Check({ done, label, onPress }: { done: boolean; label: string; 
   return (
     <Pressable onPress={onPress} style={{ flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 7 }}>
       <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: done ? colors.gold : colors.muted, backgroundColor: done ? colors.gold : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-        {done && <MaterialCommunityIcons name="check" size={16} color={colors.bg} />}
+        {done && <Icon name="check" size={16} color={colors.bg} />}
       </View>
       <Text style={{ flex: 1, color: done ? colors.muted : colors.text, fontSize: 15.5, textDecorationLine: done ? 'line-through' : 'none' }}>{label}</Text>
     </Pressable>

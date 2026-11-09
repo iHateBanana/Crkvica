@@ -1,15 +1,26 @@
-import { useState } from 'react';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { memo, useMemo, useState } from 'react';
+import { Icon } from '../../src/lib/Icon';
 import { Pressable, Text, View } from 'react-native';
 import { useAuth } from '../../src/lib/auth';
 import { SaintsList, SlavaCard } from '../../src/lib/DayParts';
 import { useT } from '../../src/lib/i18n';
 import { useFastOverrides } from '../../src/lib/FastEditor';
 import { useDayInfo } from '../../src/lib/orthocal';
-import { getDayInfo, iso, makeDate, remainingCommemorations } from '../../src/lib/orthodox';
+import { FastLevel, getDayInfo, iso, makeDate, remainingCommemorations } from '../../src/lib/orthodox';
 import { Body, Card, colors, fastColor, Ornament, redLetter, Screen, serif, Title } from '../../src/lib/ui';
 
 const navBtn = () => ({ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }) as const;
+
+const DayCell = memo(function DayCell({ d, sel, isToday, red, bold, level, onSelect }: { d: Date; sel: boolean; isToday: boolean; red: boolean; bold: boolean; level: FastLevel; onSelect: (d: Date) => void }) {
+  return (
+    <Pressable onPress={() => onSelect(d)} style={{ width: '14.28%', height: 52, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: sel ? colors.gold : 'transparent', borderWidth: isToday ? 1 : 0, borderColor: colors.gold }}>
+        <Text style={{ color: sel ? colors.bg : red ? redLetter : colors.text, fontWeight: bold ? '700' : '400' }}>{d.getDate()}</Text>
+      </View>
+      <View style={{ width: 6, height: 6, borderRadius: 3, marginTop: 1, backgroundColor: level === 'none' ? 'transparent' : fastColor[level] }} />
+    </Pressable>
+  );
+});
 
 export default function CalendarScreen() {
   const { profile } = useAuth();
@@ -22,21 +33,24 @@ export default function CalendarScreen() {
   const info = useDayInfo(selected, style);
   const ortho = info.ortho;
 
-  const first = cursor.getDay();
-  const daysInMonth = makeDate(cursor.getFullYear(), cursor.getMonth() + 2, 0).getDate();
-  const cells: (Date | null)[] = [
-    ...Array(first).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => makeDate(cursor.getFullYear(), cursor.getMonth() + 1, i + 1)),
-  ];
+  const cells = useMemo<(Date | null)[]>(() => {
+    const daysInMonth = makeDate(cursor.getFullYear(), cursor.getMonth() + 2, 0).getDate();
+    return [
+      ...Array(cursor.getDay()).fill(null),
+      ...Array.from({ length: daysInMonth }, (_, i) => makeDate(cursor.getFullYear(), cursor.getMonth() + 1, i + 1)),
+    ];
+  }, [cursor]);
+  const selectedKey = iso(selected);
+  const todayKey = iso(now);
   const selFast = applyFast(selected, info.fast);
   const shift = (n: number) => setCursor(makeDate(cursor.getFullYear(), cursor.getMonth() + 1 + n, 1));
 
   return (
     <Screen>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Pressable onPress={() => shift(-1)} style={navBtn()}><MaterialCommunityIcons name="chevron-left" size={28} color={colors.gold} /></Pressable>
+        <Pressable onPress={() => shift(-1)} style={navBtn()}><Icon name="chevron-left" size={28} color={colors.gold} /></Pressable>
         <Title>{cursor.toLocaleString(locale, { month: 'long', year: 'numeric' })}</Title>
-        <Pressable onPress={() => shift(1)} style={navBtn()}><MaterialCommunityIcons name="chevron-right" size={28} color={colors.gold} /></Pressable>
+        <Pressable onPress={() => shift(1)} style={navBtn()}><Icon name="chevron-right" size={28} color={colors.gold} /></Pressable>
       </View>
       <Ornament />
       <Card>
@@ -48,14 +62,18 @@ export default function CalendarScreen() {
           if (!d) return <View key={i} style={{ width: '14.28%', height: 52 }} />;
           const { feasts, fast: baseFast } = getDayInfo(d, style);
           const fast = applyFast(d, baseFast);
-          const sel = iso(d) === iso(selected);
+          const key = iso(d);
           return (
-            <Pressable key={i} onPress={() => setSelected(d)} style={{ width: '14.28%', height: 52, alignItems: 'center', justifyContent: 'center' }}>
-              <View style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: sel ? colors.gold : 'transparent', borderWidth: iso(d) === iso(now) ? 1 : 0, borderColor: colors.gold }}>
-                <Text style={{ color: sel ? colors.bg : feasts.some((f) => f.red) || d.getDay() === 0 ? redLetter : colors.text, fontWeight: feasts.length ? '700' : '400' }}>{d.getDate()}</Text>
-              </View>
-              <View style={{ width: 6, height: 6, borderRadius: 3, marginTop: 1, backgroundColor: fast.level === 'none' ? 'transparent' : fastColor[fast.level] }} />
-            </Pressable>
+            <DayCell
+              key={i}
+              d={d}
+              sel={key === selectedKey}
+              isToday={key === todayKey}
+              red={feasts.some((f) => f.red) || d.getDay() === 0}
+              bold={feasts.length > 0}
+              level={fast.level}
+              onSelect={setSelected}
+            />
           );
         })}
       </View>
@@ -64,7 +82,7 @@ export default function CalendarScreen() {
         <Text style={{ color: colors.gold, fontFamily: serif, fontSize: 18 }}>{selected.toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' })}{style === 'old' ? ` · ${t('Julian')} ${info.liturgicalDate.toLocaleDateString(locale, { month: 'short', day: 'numeric' })}` : ''}</Text>
         {info.feasts.map((f) => (
           <View key={f.name}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>{f.red ? <MaterialCommunityIcons name="star-four-points" size={12} color={redLetter} /> : null}<Text style={{ color: f.red ? redLetter : colors.text, fontSize: 16 }}>{t(f.name)}</Text></View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>{f.red ? <Icon name="star-four-points" size={12} color={redLetter} /> : null}<Text style={{ color: f.red ? redLetter : colors.text, fontSize: 16 }}>{t(f.name)}</Text></View>
             {f.about ? <Body muted>{t(f.about)}</Body> : null}
           </View>
         ))}

@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
-import { CalendarStyle, getDayInfo, iso, liturgicalDate, makeDate } from './orthodox';
+import { CalendarStyle, fromIso, getDayInfo, iso, liturgicalDate, makeDate } from './orthodox';
 
 export interface OrthoReading { source: string; display: string; short_display: string; text: string; }
 export interface OrthoDay {
@@ -60,7 +60,8 @@ export async function fetchDay(d: Date, style: CalendarStyle): Promise<OrthoDay 
     const day = parse(await res.json());
     // Never show a different day than the one asked for.
     if (day.date !== iso(liturgicalDate(d, style))) return null;
-    await AsyncStorage.setItem(key, JSON.stringify(day));
+    // A full device store must not cost the user a reading that was fetched successfully.
+    await AsyncStorage.setItem(key, JSON.stringify(day)).catch(() => undefined);
     return day;
   } catch {
     return null;
@@ -74,7 +75,7 @@ export function useOrthoDay(d: Date, style: CalendarStyle) {
   useEffect(() => {
     let live = true;
     setLoading(true);
-    fetchDay(d, style).then((r) => { if (live) { setDay(r); setLoading(false); } });
+    fetchDay(fromIso(k), style).then((r) => { if (live) { setDay(r); setLoading(false); } });
     return () => { live = false; };
   }, [k, style]);
   return { day, loading };

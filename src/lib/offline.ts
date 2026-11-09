@@ -15,6 +15,8 @@ export interface OfflineDeps {
   baseFetch: typeof fetch;
   // User id from the locally stored session, used when the access token is missing or expired (offline).
   storedUser: () => Promise<string | null>;
+  // Repeat reads this soon after a network read are answered from the cache. Any write to the table ends this early.
+  freshMs?: number;
 }
 
 interface Queued {
@@ -116,7 +118,12 @@ export function applyMutation(
   return rows;
 }
 
-export function createOffline({ storage, baseFetch, storedUser }: OfflineDeps) {
+export function createOffline({ storage, baseFetch, storedUser, freshMs = 0 }: OfflineDeps) {
+  const fetchedAt = new Map<string, number>();
+  const invalidate = (table: string) => {
+    const re = new RegExp(`/rest/v1/${table}(\\?|$)`);
+    for (const key of fetchedAt.keys()) if (re.test(key)) fetchedAt.delete(key);
+  };
   const listeners = new Set<() => void>();
   const notify = () => listeners.forEach((l) => l());
 
@@ -159,6 +166,7 @@ export function createOffline({ storage, baseFetch, storedUser }: OfflineDeps) {
     await withQueue(() => ({ q: [], out: undefined }));
     await storage.removeItem(QUEUE_KEY);
     await storage.removeItem(FAILED_KEY);
+    fetchedAt.clear();
     notify();
   };
 
@@ -233,11 +241,17 @@ export function createOffline({ storage, baseFetch, storedUser }: OfflineDeps) {
     if (method === 'GET') {
       if (token) await flush(token);
       const key = `${CACHE}${user}:${kind}:${url}`;
+      if (token && Date.now() - (fetchedAt.get(key) ?? -Infinity) < freshMs) {
+        const hit = await storage.getItem(key);
+        if (hit !== null) return new Response(hit, { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      const startedAt = Date.now();
       try {
         const res = await baseFetch(input, init);
         if (res.ok) {
           const text = await res.clone().text();
           await Promise.resolve(storage.setItem(key, text)).catch(() => undefined);
+          if (freshMs) fetchedAt.set(key, startedAt);
         } else if (res.status >= 500) {
           const hit = await storage.getItem(key);
           if (hit !== null) return new Response(hit, { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -251,6 +265,7 @@ export function createOffline({ storage, baseFetch, storedUser }: OfflineDeps) {
     }
 
     if (!['POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) return baseFetch(input, init);
+    invalidate(table);
 
     let bodyText = typeof init?.body === 'string' ? init.body : null;
     let parsed: any = null;
@@ -272,6 +287,7 @@ export function createOffline({ storage, baseFetch, storedUser }: OfflineDeps) {
     if (token && (await pendingFor(user)) === 0) {
       try {
         const res = await baseFetch(input, { ...init, body: bodyText });
+        invalidate(table); // a read that overlapped this write may have stored the old rows
         if (res.ok) await patchCaches(user, table, method, u, parsed);
         return res;
       } catch {

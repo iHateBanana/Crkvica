@@ -1,4 +1,4 @@
-import 'react-native-url-polyfill/auto';
+import './polyfill';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
@@ -22,6 +22,7 @@ export async function getStoredSession(): Promise<Session | null> {
 export const offline = createOffline({
   storage: AsyncStorage,
   baseFetch: (...args) => fetch(...args),
+  freshMs: 30000,
   storedUser: async () => (await getStoredSession())?.user.id ?? null,
 });
 

@@ -5,7 +5,7 @@ const b64 = (o: object) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/
 const jwt = (sub: string) => `${b64({ alg: 'HS256' })}.${b64({ sub, role: 'authenticated' })}.sig`;
 const BASE = 'https://x.supabase.co/rest/v1';
 
-function setup() {
+function setup(freshMs = 0) {
   const mem = new Map<string, string>();
   const storage = {
     getItem: async (k: string) => mem.get(k) ?? null,
@@ -22,7 +22,7 @@ function setup() {
     if (method === 'GET') return new Response(JSON.stringify(env.server), { status: 200 });
     return new Response(null, { status: 201 });
   }) as typeof fetch;
-  const off = createOffline({ storage, baseFetch, storedUser: async () => 'u1' });
+  const off = createOffline({ storage, baseFetch, storedUser: async () => 'u1', freshMs });
   const hdr = (token: string, extra: Record<string, string> = {}) => ({ authorization: `Bearer ${token}`, apikey: 'k', ...extra });
   return { mem, env, off, hdr };
 }
@@ -179,5 +179,62 @@ describe('composite-key tables', () => {
     await t.off.fetch(`${BASE}/prayer_logs?rule_id=eq.r1&day=eq.2026-10-27`, { method: 'DELETE', headers: h });
     const list = await (await t.off.fetch(url, { headers: h })).json();
     expect(list.map((r: any) => r.day)).toEqual(['2026-10-28']);
+  });
+});
+
+describe('fresh reads', () => {
+  const url = `${BASE}/prayer_logs?select=rule_id,day&order=day.desc`;
+  const gets = (t: ReturnType<typeof setup>) => t.env.calls.filter((c) => c.method === 'GET').length;
+
+  it('answers a repeat read from the cache without touching the network', async () => {
+    const t = setup(30000);
+    t.env.server = [{ rule_id: 'r', day: '2026-11-06' }];
+    await t.off.fetch(url, { headers: t.hdr(jwt('u1')) });
+    const res = await t.off.fetch(url, { headers: t.hdr(jwt('u1')) });
+    expect(await res.json()).toEqual(t.env.server);
+    expect(gets(t)).toBe(1);
+  });
+
+  it('reads the network again after any write to that table', async () => {
+    const t = setup(30000);
+    await t.off.fetch(url, { headers: t.hdr(jwt('u1')) });
+    await t.off.fetch(`${BASE}/prayer_logs`, { method: 'POST', headers: t.hdr(jwt('u1')), body: JSON.stringify({ rule_id: 'r', day: '2026-11-06', user_id: 'u1' }) });
+    await t.off.fetch(url, { headers: t.hdr(jwt('u1')) });
+    expect(gets(t)).toBe(2);
+  });
+
+  it('reads the network again after a write made while offline', async () => {
+    const t = setup(30000);
+    await t.off.fetch(url, { headers: t.hdr(jwt('u1')) });
+    t.env.online = false;
+    await t.off.fetch(`${BASE}/prayer_logs`, { method: 'POST', headers: t.hdr(jwt('u1')), body: JSON.stringify({ rule_id: 'r', day: '2026-11-06', user_id: 'u1' }) });
+    t.env.online = true;
+    await t.off.fetch(url, { headers: t.hdr(jwt('u1')) });
+    expect(gets(t)).toBe(2);
+  });
+
+  it('a write to another table leaves the fresh read alone', async () => {
+    const t = setup(30000);
+    await t.off.fetch(url, { headers: t.hdr(jwt('u1')) });
+    await t.off.fetch(`${BASE}/journal_entries`, { method: 'POST', headers: t.hdr(jwt('u1')), body: JSON.stringify({ body: 'x' }) });
+    await t.off.fetch(url, { headers: t.hdr(jwt('u1')) });
+    expect(gets(t)).toBe(1);
+  });
+
+  it('does not share fresh reads between users, and sign-out forgets them', async () => {
+    const t = setup(30000);
+    await t.off.fetch(url, { headers: t.hdr(jwt('u1')) });
+    await t.off.fetch(url, { headers: t.hdr(jwt('u2')) });
+    expect(gets(t)).toBe(2);
+    await t.off.clear();
+    await t.off.fetch(url, { headers: t.hdr(jwt('u1')) });
+    expect(gets(t)).toBe(3);
+  });
+
+  it('is off by default', async () => {
+    const t = setup();
+    await t.off.fetch(url, { headers: t.hdr(jwt('u1')) });
+    await t.off.fetch(url, { headers: t.hdr(jwt('u1')) });
+    expect(gets(t)).toBe(2);
   });
 });

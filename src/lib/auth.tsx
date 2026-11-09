@@ -18,6 +18,9 @@ const AuthContext = createContext<Ctx>({
 });
 export const useAuth = () => useContext(AuthContext);
 
+// Last known profile, so the app can open without waiting for the network. The `oc:` prefix means sign-out clears it (offline.clear).
+const profileKey = (id: string) => `oc:${id}:profile`;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -42,11 +45,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const userId = session?.user.id;
   useEffect(() => {
     if (!userId) return;
+    let fetched = false;
+    AsyncStorage.getItem(profileKey(userId)).then((raw) => {
+      if (fetched || !raw) return;
+      const p = JSON.parse(raw) as Profile;
+      setProfile(p);
+      if (p.language) setLangState(p.language);
+      setLoading(false);
+    }).catch(() => undefined);
     supabase.auth.getUser().then(({ error }) => {
       // The account no longer exists server-side (e.g. deleted): drop the stale local session.
       if (error && (error.status === 401 || error.status === 403 || error.status === 404 || /not exist|does not exist|invalid/i.test(error.message))) supabase.auth.signOut();
     });
     supabase.from('profiles').select('*').eq('id', userId).maybeSingle().then(({ data, error }) => {
+      fetched = true;
       const p = data as Profile | null;
       // Only treat a missing row as a deleted account; a network error should not sign the user out.
       if (!p && !error) { supabase.auth.signOut(); return; }
@@ -57,6 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
   }, [userId]);
+
+  useEffect(() => {
+    if (profile) AsyncStorage.setItem(profileKey(profile.id), JSON.stringify(profile)).catch(() => undefined);
+  }, [profile]);
 
   const updateProfile = useCallback(async (patch: Partial<Profile>) => {
     if (!userId) return;

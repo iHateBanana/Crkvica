@@ -9,6 +9,8 @@ import { Body, Button, Card, colors, Input, PageHeader, Screen } from '../../src
 
 interface Entry { id: string; day: string; title: string | null; body: string; }
 
+const PAGE = 50;
+
 export default function Journal() {
   const { session } = useAuth();
   const { t } = useT();
@@ -16,11 +18,13 @@ export default function Journal() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [limit, setLimit] = useState(PAGE);
 
   const load = useCallback(async () => {
-    const { data } = await supabase.from('journal_entries').select('*').order('day', { ascending: false }).order('created_at', { ascending: false });
-    setEntries((data ?? []) as Entry[]);
-  }, []);
+    const { data } = await supabase.from('journal_entries').select('*').order('day', { ascending: false }).order('created_at', { ascending: false }).limit(limit);
+    // Keep what's on screen if this page isn't available (offline, not fetched before).
+    if (data) setEntries(data as Entry[]);
+  }, [limit]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   async function save() {
@@ -48,6 +52,7 @@ export default function Journal() {
           <Pressable onPress={() => remove(e.id)}><Text style={{ color: colors.muted }}>{t('Delete')}</Text></Pressable>
         </Card>
       ))}
+      {entries.length >= limit ? <Button variant="ghost" label={t('Show more')} onPress={() => setLimit(limit + PAGE)} /> : null}
     </Screen>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Icon, IconName } from './Icon';
 import { Pressable, Text, View } from 'react-native';
 import { DEEDS } from './content';
 import { T, useT } from './i18n';
@@ -19,7 +19,7 @@ export interface CheckinRow {
   reflection?: string | null;
 }
 
-export const MOOD_OPTIONS: { v: string; e: React.ComponentProps<typeof MaterialCommunityIcons>['name'] }[] = [
+export const MOOD_OPTIONS: { v: string; e: IconName }[] = [
   { v: 'Peaceful', e: 'white-balance-sunny' }, { v: 'Grateful', e: 'hands-pray' }, { v: 'Joyful', e: 'emoticon-happy-outline' }, { v: 'Hopeful', e: 'weather-sunset-up' },
   { v: 'Tired', e: 'sleep' }, { v: 'Anxious', e: 'emoticon-confused-outline' }, { v: 'Distracted', e: 'blur' }, { v: 'Sorrowful', e: 'emoticon-sad-outline' }, { v: 'Tempted', e: 'sword-cross' },
 ];
@@ -129,11 +129,11 @@ export function CheckIn({
 
         <Body muted small>{t('Choose all that apply.')}</Body>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
-          {[...MOOD_OPTIONS.map((o) => ({ v: o.v, e: o.e as React.ComponentProps<typeof MaterialCommunityIcons>['name'], custom: false })), ...customMoods.map((v) => ({ v, e: 'heart-outline' as const, custom: true }))].map((o) => {
+          {[...MOOD_OPTIONS.map((o) => ({ v: o.v, e: o.e as IconName, custom: false })), ...customMoods.map((v) => ({ v, e: 'heart-outline' as const, custom: true }))].map((o) => {
             const on = moods.includes(o.v);
             return (
               <Pressable key={o.v} onLongPress={o.custom ? () => { saveMoods(customMoods.filter((x) => x !== o.v)); setMoods(moods.filter((x) => x !== o.v)); } : undefined} onPress={() => touch(setMoods)(on ? moods.filter((x) => x !== o.v) : [...moods, o.v])} style={{ alignItems: 'center', width: '30%', flexGrow: 1, paddingVertical: 10, borderRadius: 16, borderWidth: 1, borderColor: on ? colors.gold : colors.border, backgroundColor: on ? 'rgba(227,185,92,0.18)' : colors.cardHi }}>
-                <MaterialCommunityIcons name={o.e} size={26} color={on ? colors.gold : colors.text} />
+                <Icon name={o.e} size={26} color={on ? colors.gold : colors.text} />
                 <Text style={{ color: on ? colors.gold : colors.text, fontSize: 13, marginTop: 2 }}>{o.custom ? o.v : t(o.v)}</Text>
               </Pressable>
             );
@@ -141,7 +141,7 @@ export function CheckIn({
         </View>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
           <View style={{ flex: 1 }}><Input placeholder={t('Add your own feeling')} value={customMood} onChangeText={setCustomMood} onSubmitEditing={addMood} /></View>
-          <Pressable onPress={addMood} hitSlop={8}><MaterialCommunityIcons name="plus-circle-outline" size={32} color={colors.gold} /></Pressable>
+          <Pressable onPress={addMood} hitSlop={8}><Icon name="plus-circle-outline" size={32} color={colors.gold} /></Pressable>
         </View>
         {customMoods.length > 0 && <Body muted small>{t('Press and hold one of your own feelings to remove it.')}</Body>}
         {moods.length ? <Text style={{ color: colors.text, fontStyle: 'italic', lineHeight: 22, marginTop: 4 }}>{response(moods, fast, t, red)}</Text> : null}

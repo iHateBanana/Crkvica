@@ -39,7 +39,7 @@ Migrations live in `supabase/migrations`. Apply them to your project:
 ```bash
 npx supabase login
 npx supabase link --project-ref <project-ref>
-npx supabase db push
+npx supabase db push --remote
 ```
 
 If direct connections fail (IPv6), push through the pooler:
@@ -105,7 +105,7 @@ eas submit --platform android                       # then: --platform ios
 
 ## Content notice
 
-Feast descriptions, saint stories, the slava / name-day table, fasting exceptions and the Serbian translations were written from general knowledge and should be reviewed by a priest or a reliable source before wide release. Fasting guidance is general; users should follow their own parish and spiritual father. The cycle tracker shows illustrative curves and estimates, not medical advice. Daily readings and saints come from [Orthocal](https://orthocal.info).
+Feast descriptions, saint stories, the slava / name-day table, fasting exceptions and the Serbian translations were written from general knowledge and should be reviewed by a priest or a reliable source before wide release. Fasting guidance is general; users should follow their own parish and spiritual father. The cycle tracker shows illustrative curves and estimates, not medical advice. Daily readings and saints come from [Orthocal](https://orthocal.info). Saint images come from [Wikimedia Commons](https://commons.wikimedia.org) and Wikipedia: the list for built-in feasts in `src/lib/saintImages.ts` was chosen from thumbnails and needs the same review, and other saints are matched automatically by strict rules in `src/lib/saintMatch.ts`.
 
 ## Project layout
 

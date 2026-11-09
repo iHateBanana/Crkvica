@@ -1,16 +1,35 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isSamePerson, isSinglePerson, nameWords } from './saintMatch';
 
 const memo = new Map<string, string | null>();
+const API = 'https://en.wikipedia.org/w/api.php?format=json&origin=*&action=query';
 
-// "Rep. Ven. Job of Pochaev (1651)" -> "Job of Pochaev"
-export function cleanSaintName(name: string): string {
-  return name
-    .replace(/\([^)]*\)/g, ' ')
-    .replace(/\b(our|holy|saint|st|sts|ven|rep|righteous|venerable|reverend|martyrs?|hieromartyrs?|great|new|apostles?|prophets?|bishop|archbishop|archimandrite|the|blessed|confessors?|wonderworker|and|his|her|mother|children|virgin|monk|nun|father|fathers)\b\.?/gi, ' ')
-    .replace(/[,;:]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+// Built-in feasts and saints with no story of their own, whose page can't be found by matching the name.
+const KNOWN_PAGES: Record<string, string> = {
+  'St. Sava of Serbia': 'Saint Sava',
+  'St. Prince Lazar (Vidovdan)': 'Lazar of Serbia',
+  'St. Paraskeva (Petka)': 'Paraskeva of the Balkans',
+  'Ss. Cyril and Methodius': 'Cyril and Methodius',
+  'Holy Prophet Elijah (Ilindan)': 'Elijah',
+  'Holy Apostle and Evangelist Luke (Lučindan)': 'Luke the Evangelist',
+  'Holy Apostle Andrew the First-called': 'Andrew the Apostle',
+  'St. Stephen the Protomartyr (Stefanovdan)': 'Saint Stephen',
+  'St. Basil of Ostrog (Vasilijevdan)': 'Basil of Ostrog',
+  'Theophany (Baptism of the Lord)': 'Baptism of Jesus',
+  'Meeting of the Lord': 'Presentation of Jesus',
+  'Annunciation of the Theotokos': 'Annunciation',
+  'Transfiguration of the Lord': 'Transfiguration of Jesus',
+  'Dormition of the Theotokos': 'Dormition of the Mother of God',
+  'Nativity of the Theotokos': 'Nativity of Mary',
+  'Exaltation of the Holy Cross': 'Feast of the Cross',
+  'Protection of the Theotokos': 'Intercession of the Theotokos',
+  'Entry of the Theotokos into the Temple': 'Presentation of Mary',
+  'Nativity of the Lord': 'Nativity of Jesus',
+  'Palm Sunday': 'Palm Sunday',
+  'Holy Pascha - Resurrection of the Lord': 'Resurrection of Jesus',
+  'Ascension of the Lord': 'Ascension of Jesus',
+  'Pentecost': 'Pentecost',
+};
 
 // Keeps the first few paragraphs (headings dropped) and ends on a full sentence.
 function trimLife(extract?: string): string | undefined {
@@ -28,22 +47,27 @@ function trimLife(extract?: string): string | undefined {
   return out;
 }
 
+// The Wikipedia page for this name, or null unless it's clearly the same person.
+async function findPage(name: string): Promise<string | null> {
+  if (KNOWN_PAGES[name]) return KNOWN_PAGES[name];
+  if (!isSinglePerson(name)) return null;
+  const q = encodeURIComponent(`${nameWords(name).name.join(' ')} saint`);
+  const s = await fetch(`${API}&generator=search&gsrsearch=${q}&gsrlimit=3&prop=description&redirects=1`).then((r) => r.json());
+  const pages: any[] = Object.values(s?.query?.pages ?? {});
+  pages.sort((a, b) => a.index - b.index);
+  return pages.find((p) => isSamePerson(name, { title: p.title, description: p.description }))?.title ?? null;
+}
+
 // Looks a saint up on Wikipedia and returns the opening summary, or null when nothing credible is found.
 export async function fetchSaintSummary(name: string): Promise<string | null> {
-  const key = `wiki2:${name}`;
+  const key = `wiki3:${name}`;
   if (memo.has(key)) return memo.get(key) ?? null;
   try {
     const cached = await AsyncStorage.getItem(key);
     if (cached) { memo.set(key, cached); return cached; }
-    const clean = cleanSaintName(name);
-    if (clean.length < 3) return null;
-    const q = encodeURIComponent(`${clean} Orthodox saint`);
-    const s = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${q}&srlimit=3&format=json&origin=*`).then((r) => r.json());
-    const hits: { title: string }[] = s?.query?.search ?? [];
-    const words = clean.toLowerCase().split(' ').filter((w) => w.length > 2);
-    const hit = hits.find((h) => words.some((w) => h.title.toLowerCase().includes(w)));
-    if (!hit) { memo.set(key, null); return null; }
-    const p = await fetch(`https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&redirects=1&titles=${encodeURIComponent(hit.title)}&format=json&origin=*`).then((r) => r.json());
+    const title = await findPage(name);
+    if (!title) { memo.set(key, null); return null; }
+    const p = await fetch(`${API}&prop=extracts&explaintext=1&redirects=1&titles=${encodeURIComponent(title)}`).then((r) => r.json());
     const page: any = Object.values(p?.query?.pages ?? {})[0];
     const text = trimLife(page?.extract);
     if (!text || text.length < 60) { memo.set(key, null); return null; }

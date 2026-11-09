@@ -1,16 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Icon } from '../../src/lib/Icon';
 import { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { CheckIn, CheckinRow } from '../../src/lib/CheckIn';
 import { quoteFor, readingFor, todosFor } from '../../src/lib/content';
 import { useAuth } from '../../src/lib/auth';
-import { MainStory, Readings, SaintsList, SlavaCard } from '../../src/lib/DayParts';
+import { MainStory, Readings, SaintFigure, SaintsList, SlavaCard } from '../../src/lib/DayParts';
 import { useT } from '../../src/lib/i18n';
 import { FastEditor, useFastOverrides } from '../../src/lib/FastEditor';
 import { useDayInfo } from '../../src/lib/orthocal';
 import { fromIso, getDayInfo, iso, remainingCommemorations, upcomingRedLetter } from '../../src/lib/orthodox';
+import { loadPrayerData } from '../../src/lib/prayerData';
+import { useSaintImage } from '../../src/lib/saintImage';
+import { imageSubject } from '../../src/lib/saintMatch';
 import { streakFrom } from '../../src/lib/streak';
 import { supabase } from '../../src/lib/supabase';
 import { Body, Card, Check, colors, Cross, fastColor, Hero, Label, Ornament, Orb, Pill, redLetter, Screen, serif, Title } from '../../src/lib/ui';
@@ -36,30 +39,31 @@ export default function Today() {
   const upcoming = upcomingRedLetter(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 12), style, 4);
   const stories = ortho?.stories ?? [];
   const mainName = red?.name ?? others[0]?.name ?? ortho?.saints[0];
+  const subject = imageSubject(mainName, ortho?.saints ?? []);
+  const saintImage = useSaintImage(subject);
 
   const [rules, setRules] = useState<{ id: string; title: string }[]>([]);
   const [streakLogs, setStreakLogs] = useState<{ rule_id: string; day: string }[]>([]);
-  const streak = streakFrom(rules.map((r) => r.id), streakLogs, !!profile?.streak_requires_all);
+  const requireAll = !!profile?.streak_requires_all;
+  const streak = streakFrom(rules.map((r) => r.id), streakLogs, requireAll);
   const [doneIds, setDoneIds] = useState<string[]>([]);
   const [ticked, setTicked] = useState<string[]>([]);
   const [history, setHistory] = useState<Checkin[]>([]);
 
   useFocusEffect(useCallback(() => {
     (async () => {
-      const [{ data: rs }, { data: logs }, { data: cks }, raw] = await Promise.all([
-        supabase.from('prayer_rules').select('id, title').order('sort').order('created_at'),
-        supabase.from('prayer_logs').select('rule_id, day'),
+      const [{ rules: list, logs }, { data: cks }, raw] = await Promise.all([
+        loadPrayerData(requireAll),
         supabase.from('checkins').select('*').order('day', { ascending: false }).limit(90),
         AsyncStorage.getItem('todos-' + key),
       ]);
-      const list = (rs ?? []) as { id: string; title: string }[];
       setRules(list);
-      setStreakLogs((logs ?? []) as { rule_id: string; day: string }[]);
-      setDoneIds((logs ?? []).filter((l) => l.day === key).map((l) => l.rule_id as string));
+      setStreakLogs(logs);
+      setDoneIds([...new Set(logs.filter((l) => l.day === key).map((l) => l.rule_id))]);
       setTicked(raw ? JSON.parse(raw) : []);
       setHistory((cks ?? []) as Checkin[]);
     })();
-  }, [key]));
+  }, [key, requireAll]));
 
   const togglePrayer = async (id: string) => {
     const on = doneIds.includes(id);
@@ -118,7 +122,7 @@ export default function Today() {
           {red ? <Pill color={redLetter}>{t('RED LETTER DAY')}</Pill> : <Pill color={fastColor[fast.level]}>{t(fast.label)}</Pill>}
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <Orb color={orbColor}>{red ? <MaterialCommunityIcons name="star-four-points" size={30} color={orbColor} /> : <Cross size={34} color={orbColor} />}</Orb>
+          <SaintFigure image={saintImage} subject={subject} mainName={mainName} fallback={<Orb color={orbColor}>{red ? <Icon name="star-four-points" size={30} color={orbColor} /> : <Cross size={34} color={orbColor} />}</Orb>} />
           <Text style={{ flex: 1, color: colors.text, fontSize: 19, fontFamily: serif, lineHeight: 25 }}>
             {mainName ? (feasts.length ? t(mainName) : mainName) : t('An ordinary day. Every day is a gift from God.')}
           </Text>
@@ -131,7 +135,7 @@ export default function Today() {
               <Text style={{ color: colors.gold, fontWeight: '700', letterSpacing: 0.5 }}>{showStory ? t('Show less') + ' ▲' : t('Read the story') + ' ▼'}</Text>
             </Pressable>
           </>
-        ) : <MainStory stories={stories} mainName={mainName} />}
+        ) : <MainStory stories={stories} mainName={mainName} tucked={!saintImage} />}
       </Hero>
 
       <SaintsList saints={remainingCommemorations(ortho?.saints ?? [], mainName ? [mainName] : [])} stories={stories} mainName={mainName} />

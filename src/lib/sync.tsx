@@ -31,7 +31,7 @@ export function SyncBanner() {
       window.addEventListener('offline', onOffline);
     }
     const app = AppState.addEventListener('change', (s) => { if (s === 'active') trigger(); });
-    const timer = setInterval(trigger, 20000);
+    const timer = setInterval(() => { offline.pending().then((n) => { if (n > 0) trigger(); }); }, 20000);
     return () => {
       unsub();
       app.remove();
