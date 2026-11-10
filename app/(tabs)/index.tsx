@@ -9,11 +9,11 @@ import { useAuth } from '../../src/lib/auth';
 import { MainStory, Readings, SaintFigure, SaintsList, SlavaCard } from '../../src/lib/DayParts';
 import { useT } from '../../src/lib/i18n';
 import { FastEditor, useFastOverrides } from '../../src/lib/FastEditor';
+import { leadSaint } from '../../src/lib/leadSaint';
 import { useDayInfo } from '../../src/lib/orthocal';
 import { fromIso, getDayInfo, iso, remainingCommemorations, upcomingRedLetter } from '../../src/lib/orthodox';
 import { loadPrayerData } from '../../src/lib/prayerData';
-import { useSaintImage } from '../../src/lib/saintImage';
-import { imageSubject } from '../../src/lib/saintMatch';
+import { useDayIcon } from '../../src/lib/saintImage';
 import { streakFrom } from '../../src/lib/streak';
 import { supabase } from '../../src/lib/supabase';
 import { Body, Card, Check, colors, Cross, fastColor, Hero, Label, Ornament, Orb, Pill, redLetter, Screen, serif, Title } from '../../src/lib/ui';
@@ -38,9 +38,9 @@ export default function Today() {
   const quote = quoteFor(today);
   const upcoming = upcomingRedLetter(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 12), style, 4);
   const stories = ortho?.stories ?? [];
-  const mainName = red?.name ?? others[0]?.name ?? ortho?.saints[0];
-  const subject = imageSubject(mainName, ortho?.saints ?? []);
-  const saintImage = useSaintImage(subject);
+  const mainName = red?.name ?? others[0]?.name ?? leadSaint(ortho?.saints ?? []);
+  const dayIcon = useDayIcon(mainName, ortho?.saints);
+  const saintImage = dayIcon?.image ?? null;
 
   const [rules, setRules] = useState<{ id: string; title: string }[]>([]);
   const [streakLogs, setStreakLogs] = useState<{ rule_id: string; day: string }[]>([]);
@@ -122,7 +122,7 @@ export default function Today() {
           {red ? <Pill color={redLetter}>{t('RED LETTER DAY')}</Pill> : <Pill color={fastColor[fast.level]}>{t(fast.label)}</Pill>}
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <SaintFigure image={saintImage} subject={subject} mainName={mainName} fallback={<Orb color={orbColor}>{red ? <Icon name="star-four-points" size={30} color={orbColor} /> : <Cross size={34} color={orbColor} />}</Orb>} />
+          <SaintFigure image={saintImage} subject={dayIcon?.shows} mainName={mainName} fallback={<Orb color={orbColor}>{red ? <Icon name="star-four-points" size={30} color={orbColor} /> : <Cross size={34} color={orbColor} />}</Orb>} />
           <Text style={{ flex: 1, color: colors.text, fontSize: 19, fontFamily: serif, lineHeight: 25 }}>
             {mainName ? (feasts.length ? t(mainName) : mainName) : t('An ordinary day. Every day is a gift from God.')}
           </Text>

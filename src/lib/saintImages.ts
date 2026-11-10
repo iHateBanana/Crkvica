@@ -1,6 +1,6 @@
 // Images for the feasts and saints built into the calendar (names as in orthodox.ts), as file names on Wikimedia Commons.
 // Chosen by eye from thumbnails, because automatic searches returned church buildings and other saints. They have not
-// had a theological review: see "Content notice" in the README. A feast with no entry simply shows the cross.
+// had a theological review: see "Content notice" in the README. A feast with no entry falls through to the choice in saintImage.ts.
 export const PINNED_IMAGES: Record<string, string> = {
   "Annunciation of the Theotokos": "Благовещение Устюжское - Google Art Project.jpg",
   "Ascension of the Lord": "Ascension of Jesus icon, Lattakia (1667).jpg",
@@ -26,14 +26,14 @@ export const PINNED_IMAGES: Record<string, string> = {
   "Nativity of St. John the Baptist": "052 Nativity of Saint John the Baptist Icon from Saint Paraskevi Church in Langadas.jpg",
   "Nativity of the Lord": "The Nativity of Christ Dionysius of Fourna.png",
   "Nativity of the Theotokos": "Nikola-Obrazopisov-Belyova-church-Nativity-of-the-Theotokos-icon-1863.jpg",
-  "Palm Sunday": "Palm Sunday Tver 15th c.jpg",
+  "Palm Sunday": "Icon - The Entry Into Jerusalem - MNAR.jpg",
   "Pentecost": "Pentecost Dionysius of Fourna.png",
   "Protection of the Theotokos": "Samokov-nunnery-icon-Intercession-of-the-Theotokos.jpg",
   "Ss. Cyril and Methodius": "Sts Cyril and Methodius Icon in Tresonche.png",
-  "St. Basil of Ostrog (Vasilijevdan)": "Saint Basil of Ostrog.jpg",
+  "St. Basil of Ostrog (Vasilijevdan)": "Sveti Vasilije Ostroški.jpg",
   "St. Nicholas the Wonderworker": "Saint Nicholas, Orthodox icon 2.jpg",
   "St. Paraskeva (Petka)": "Mosaic Icon of Saint Petka (Paraskeva) of the Balkans, Temple of Saint Sava, Belgrade.jpg",
-  "St. Prince Lazar (Vidovdan)": "Prince Lazar (Ravanica Monastery).jpg",
+  "St. Prince Lazar (Vidovdan)": "Holy Prince Lazar the Great Martyr fresco in Canada (photo by Vujcic).jpg",
   "St. Sava of Serbia": "Saint Sava, fresco from Mileševa.jpg",
   "St. Stephen the Protomartyr (Stefanovdan)": "Saint Stephen Protomartyr.jpg",
   "Sunday of All Saints": "All saints icon (Russia, 1890).jpeg",

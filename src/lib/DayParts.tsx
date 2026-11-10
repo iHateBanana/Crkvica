@@ -81,20 +81,25 @@ export function MainStory({ stories, mainName, tucked = true }: { stories: Ortho
 }
 
 // The day's saint in an icon frame, credited to its source. Shows the fallback when there's no image or it can't load (offline).
+const TALL = 1.45; // height / width beyond which a centred crop of the 104x132 box would lose the head
+
 export function SaintFigure({ image, subject, mainName, fallback }: { image: SaintImage | null; subject?: string; mainName?: string; fallback: React.ReactNode }) {
   const { t } = useT();
   const [failed, setFailed] = useState<string | null>(null);
   if (!image || failed === image.uri) return <>{fallback}</>;
   return (
     <View style={{ width: 104, gap: 4 }}>
-      <Image
-        source={{ uri: image.uri }}
-        accessibilityLabel={subject}
-        resizeMode="cover"
-        onError={() => setFailed(image.uri)}
-        style={{ width: 104, height: 132, borderRadius: 12, borderWidth: 2, borderColor: colors.gold, backgroundColor: ga(0.12) }}
-      />
-      {subject && subject !== mainName ? <Text numberOfLines={3} style={{ color: colors.text, fontSize: 11, lineHeight: 14, textAlign: 'center' }}>{subject}</Text> : null}
+      {/* A much taller icon is pinned to the top, so the crop keeps the saint's face rather than the middle. */}
+      <View style={{ width: 104, height: 132, borderRadius: 12, borderWidth: 2, borderColor: colors.gold, backgroundColor: ga(0.12), overflow: 'hidden' }}>
+        <Image
+          source={{ uri: image.uri }}
+          accessibilityLabel={subject}
+          resizeMode="cover"
+          onError={() => setFailed(image.uri)}
+          style={image.aspect && image.aspect > TALL ? { width: 100, height: 100 * image.aspect } : { width: 100, height: 128 }}
+        />
+      </View>
+      {subject && subject !== mainName ? <Text numberOfLines={3} style={{ color: colors.text, fontSize: 11, lineHeight: 14, textAlign: 'center' }}>{t(subject)}</Text> : null}
       <Pressable onPress={() => Linking.openURL(image.source)} hitSlop={6} accessibilityRole="link">
         <Text style={{ color: colors.muted, fontSize: 10, textAlign: 'center', textDecorationLine: 'underline' }}>{t('Image: Wikimedia')}</Text>
       </Pressable>
