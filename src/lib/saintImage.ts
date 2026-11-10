@@ -1,22 +1,38 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
+import { DAILY_IMAGES } from './saintImagesDaily';
 import { PINNED_IMAGES } from './saintImages';
-import { isCredibleMatch, isSinglePerson, nameWords } from './saintMatch';
+import { ICON_ASPECTS } from './saintImageAspects';
+import { imageSubject, isCredibleMatch, isSinglePerson, nameWords } from './saintMatch';
 
 export interface SaintImage {
   uri: string;
   source: string; // page to credit, where the licence and author are shown
+  aspect?: number; // height / width, when the icon is known to be much taller or wider than the box
 }
 
+// An icon for the day, and who it shows, so an icon of someone other than the day's main saint can be labelled as such.
+export interface DayIcon {
+  image: SaintImage;
+  shows: string | undefined;
+}
+
+// The icon box is 104x132, so on a 3x screen an icon needs to be at least 312x396. An upright icon gets that at 330
+// wide; a squarer or wider one needs a wider thumbnail to be tall enough. All three are Wikimedia's standard sizes.
 const WIDTH = 330;
+export const thumbWidth = (aspect: number) => (396 / aspect <= WIDTH ? WIDTH : 396 / aspect <= 500 ? 500 : 960);
+const ALL_SAINTS_FEAST = 'Sunday of All Saints';
+export const ALL_SAINTS_LABEL = 'All Saints';
 
 export function pinnedImage(name: string | undefined): SaintImage | undefined {
-  const file = name ? PINNED_IMAGES[name] : undefined;
+  const file = name ? PINNED_IMAGES[name] ?? DAILY_IMAGES[name] : undefined;
   if (!file) return undefined;
   const encoded = encodeURIComponent(file.replace(/ /g, '_'));
+  const aspect = ICON_ASPECTS[file];
   return {
-    uri: `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=${WIDTH}`,
+    uri: `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=${aspect ? thumbWidth(aspect) : WIDTH}`,
     source: `https://commons.wikimedia.org/wiki/File:${encoded}`,
+    ...(aspect ? { aspect } : {}),
   };
 }
 
@@ -45,15 +61,64 @@ export async function fetchSaintImage(name: string): Promise<SaintImage | null> 
   }
 }
 
-export function useSaintImage(name: string | undefined): SaintImage | null {
-  const pinned = pinnedImage(name);
-  const needsLookup = !!name && !pinned;
+// Days named after a season or a feast rather than a person, and the feast whose icon suits them. Order matters: the
+// more specific names come first, and any other Sunday is a little Pascha.
+const SEASONS: readonly [RegExp, string][] = [
+  [/great and holy saturday/i, 'Holy Saturday'],
+  [/palm sunday/i, 'Palm Sunday'],
+  [/mid-pentecost/i, 'Holy Pascha - Resurrection of the Lord'],
+  [/holy trinity|leavetaking of pentecost/i, 'Pentecost'],
+  [/ascension/i, 'Ascension of the Lord'],
+  [/pascha|^bright/i, 'Holy Pascha - Resurrection of the Lord'],
+  [/theophany/i, 'Theophany (Baptism of the Lord)'],
+  [/meeting/i, 'Meeting of the Lord'],
+  [/annunciation|akathist/i, 'Annunciation of the Theotokos'],
+  [/transfiguration/i, 'Transfiguration of the Lord'],
+  [/dormition/i, 'Dormition of the Theotokos'],
+  [/\bentry\b/i, 'Entry of the Theotokos into the Temple'],
+  [/^forefeast of nativity$|nativity of the theotokos/i, 'Nativity of the Theotokos'], // Orthocal only uses the bare name for September
+  [/nativity/i, 'Nativity of the Lord'],
+  [/elevation|exaltation|\bcross\b/i, 'Exaltation of the Holy Cross'],
+  [/sunday/i, 'Holy Pascha - Resurrection of the Lord'],
+];
+
+export function seasonFeast(names: readonly string[]): string | undefined {
+  for (const name of names) {
+    const feast = SEASONS.find(([pattern]) => pattern.test(name));
+    if (feast) return feast[1];
+  }
+  return undefined;
+}
+
+// Picks the day's icon: the feast or the main saint's own (or their group's), then another saint commemorated that day,
+// then the feast or season the day belongs to, then the icon of All Saints. `saints` is undefined until the day has
+// loaded and `found` is undefined while a lookup runs; the later steps wait for both, so a general icon can't flash up
+// ahead of the right one.
+export function chooseDayIcon(mainName: string | undefined, saints: string[] | undefined, found: SaintImage | null | undefined): DayIcon | null {
+  if (!mainName) return null;
+  const feast = pinnedImage(mainName);
+  if (feast) return { image: feast, shows: mainName };
+  const subject = imageSubject(mainName, saints ?? []);
+  const own = pinnedImage(subject) ?? found;
+  if (own) return { image: own, shows: subject };
+  if (!saints || found === undefined) return null;
+  const other = saints.find((s) => s !== subject && pinnedImage(s));
+  if (other) return { image: pinnedImage(other)!, shows: other };
+  const season = seasonFeast(saints);
+  if (season) return { image: pinnedImage(season)!, shows: season };
+  return { image: pinnedImage(ALL_SAINTS_FEAST)!, shows: ALL_SAINTS_LABEL };
+}
+
+export function useDayIcon(mainName: string | undefined, saints: string[] | undefined): DayIcon | null {
+  const subject = imageSubject(mainName, saints ?? []);
+  const needsLookup = !pinnedImage(mainName) && !!subject && !pinnedImage(subject);
   const [found, setFound] = useState<{ name: string; image: SaintImage | null } | null>(null);
   useEffect(() => {
-    if (!needsLookup || !name) return;
+    if (!needsLookup || !subject) return;
     let live = true;
-    fetchSaintImage(name).then((image) => { if (live) setFound({ name, image }); });
+    fetchSaintImage(subject).then((image) => { if (live) setFound({ name: subject, image }); });
     return () => { live = false; };
-  }, [name, needsLookup]);
-  return pinned ?? (found && found.name === name ? found.image : null);
+  }, [subject, needsLookup]);
+  const lookup = !needsLookup ? null : found && found.name === subject ? found.image : undefined;
+  return chooseDayIcon(mainName, saints, lookup);
 }

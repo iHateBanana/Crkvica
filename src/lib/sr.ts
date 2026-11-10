@@ -75,6 +75,7 @@ export const SR: Record<string, string> = {
   'Show more': 'Прикажи више',
   'Summary from Wikipedia': 'Сажетак са Википедије',
   'Image: Wikimedia': 'Слика: Викимедија',
+  'All Saints': 'Сви свети',
   'No written life of this saint is available yet.': 'Житије овог светитеља још није доступно.',
   Read: 'Читај',
   'Read {ref}': 'Читај {ref}',
