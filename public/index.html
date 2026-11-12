@@ -47,20 +47,31 @@
     <script>
       try { if (localStorage.getItem('theme') === 'blue') document.documentElement.className = 'blue'; } catch (e) {}
       // Home Screen apps on iOS can report a viewport shorter than the screen. Measure the missing strip at the
-      // bottom so the app can extend into it instead of leaving a different-coloured bar.
+      // bottom so the app can extend into it instead of leaving a different-coloured bar. iOS versions disagree on
+      // which height is short, and settle it late (after launch, or on returning from the background, often without
+      // a resize event), so take the largest of several readings and measure again at those moments. Guessing too
+      // high is harmless: the tab bar and page padding add the gap back, so only too low shows the strip.
       function setGap() {
         try {
           var gap = 0;
-          if (navigator.standalone) {
-            var sh = Math.max(screen.height, screen.width);
-            gap = Math.max(0, Math.min(60, Math.round(sh - window.innerHeight)));
+          if (navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)) {
+            var landscape = window.innerWidth > window.innerHeight;
+            var sh = landscape ? Math.min(screen.height, screen.width) : Math.max(screen.height, screen.width);
+            var heights = [window.innerHeight, document.documentElement.clientHeight];
+            if (window.visualViewport) heights.push(Math.round(window.visualViewport.height));
+            var shortest = Math.min.apply(null, heights.filter(function (h) { return h > 0; }));
+            gap = Math.max(0, Math.min(60, Math.round(sh - shortest)));
           }
           document.documentElement.style.setProperty('--bottom-gap', gap + 'px');
         } catch (e) {}
       }
-      setGap();
+      function settle() { setGap(); [100, 400, 1000, 2500].forEach(function (ms) { setTimeout(setGap, ms); }); }
+      settle();
       window.addEventListener('resize', setGap);
-      window.addEventListener('orientationchange', setGap);
+      window.addEventListener('orientationchange', settle);
+      window.addEventListener('pageshow', settle);
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) settle(); });
+      if (window.visualViewport) window.visualViewport.addEventListener('resize', setGap);
     </script>
   </head>
   <body>
